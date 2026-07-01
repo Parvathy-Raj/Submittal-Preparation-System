@@ -1,4 +1,4 @@
-import hashlib
+﻿import hashlib
 import json
 import uuid
 from contextlib import asynccontextmanager
@@ -361,3 +361,4 @@ def download(submittal_id: str, user: User = Depends(current_user), db: Session 
         raise HTTPException(404, "Generated submittal not found")
     filename = f"{item.number}-R{item.revision}.pdf".replace("/", "-")
     return StreamingResponse(BytesIO(item.final_pdf), media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"', "ETag": item.final_sha256 or ""})
+

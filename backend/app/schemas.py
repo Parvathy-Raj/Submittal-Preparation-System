@@ -100,6 +100,10 @@ class SubmittalCreate(BaseModel):
     section_order: list[str] = []
 
 
+class SubmittalUpdate(SubmittalCreate):
+    pass
+
+
 class SubmittalOut(ORMModel):
     id: uuid.UUID
     number: str

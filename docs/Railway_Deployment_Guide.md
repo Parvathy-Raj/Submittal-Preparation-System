@@ -136,6 +136,7 @@ Then:
 1. Deploy frontend service.
 2. Go to **Settings**.
 3. Under **Networking → Public Networking**, click **Generate Domain**.
+4. When Railway asks for the port, enter `8080`.
 4. Open the frontend Railway URL.
 
 ---

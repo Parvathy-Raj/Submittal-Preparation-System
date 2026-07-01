@@ -15,7 +15,7 @@ from .config import settings
 from .database import Base, SessionLocal, engine, get_db
 from .models import Document, DocumentKind, Product, Role, Submittal, SubmittalAttachment, SubmittalStatus, Template, TemplateKind, User
 from .pdf_engine import FileEntry, Section, assemble
-from .schemas import DocumentOut, ProductCreate, ProductOut, ProductUpdate, SubmittalCreate, SubmittalOut, TemplateOut, Token, UserCreate, UserOut, UserUpdate
+from .schemas import DocumentOut, ProductCreate, ProductOut, ProductUpdate, SubmittalCreate, SubmittalOut, SubmittalUpdate, TemplateOut, Token, UserCreate, UserOut, UserUpdate
 from .security import admin_only, create_token, current_user, hash_password, system_admin_only, verify_password
 
 
@@ -231,6 +231,29 @@ def create_submittal(payload: SubmittalCreate, user: User = Depends(current_user
     data = payload.model_dump(exclude={"product_ids", "document_order", "section_order"})
     item = Submittal(**data, document_order=[str(document_id) if document_id else None for document_id in payload.document_order], section_order=payload.section_order, products=list(products), created_by_id=user.id)
     db.add(item); db.commit(); db.refresh(item)
+    return item
+
+
+@app.put("/api/v1/submittals/{submittal_id}", response_model=SubmittalOut)
+def update_submittal(submittal_id: str, payload: SubmittalUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    try:
+        item = db.get(Submittal, uuid.UUID(submittal_id))
+    except ValueError:
+        item = None
+    if not item or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
+        raise HTTPException(404, "Submittal not found")
+    if item.status == SubmittalStatus.generated:
+        raise HTTPException(409, "Generated submittals cannot be edited. Create a new revision instead.")
+    products = db.scalars(select(Product).where(Product.id.in_(payload.product_ids), Product.is_active.is_(True))).all() if payload.product_ids else []
+    data = payload.model_dump(exclude={"product_ids", "document_order", "section_order"})
+    for field, value in data.items():
+        setattr(item, field, value)
+    item.document_order = [str(document_id) if document_id else None for document_id in payload.document_order]
+    item.section_order = payload.section_order
+    item.products = list(products)
+    item.status = SubmittalStatus.draft
+    item.error_message = None
+    db.commit(); db.refresh(item)
     return item
 
 

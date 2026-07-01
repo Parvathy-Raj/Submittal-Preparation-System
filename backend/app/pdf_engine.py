@@ -24,6 +24,75 @@ def _available_font(requested: str) -> str:
     return requested if requested in pdfmetrics.getRegisteredFontNames() else "Helvetica"
 
 
+def default_field_map(kind: str) -> dict:
+    """Fallback template coordinates used when an uploaded template has no JSON map.
+
+    The uploaded PDF remains the base design; these defaults only place dynamic
+    text over the approved cover/index/divider templates.
+    """
+    if kind == "cover":
+        return {
+            "__masks__": [
+                {"page": 0, "x": 55, "y": 185, "width": 500, "height": 235, "color": "#FFFFFF"},
+            ],
+            "cover_material_line": {"page": 0, "x": 297.5, "y": 382, "font": "Helvetica-Bold", "font_size": 19, "max_width": 470, "align": "center", "color": "#000000"},
+            "project_name": {"page": 0, "x": 297.5, "y": 338, "font": "Helvetica-Bold", "font_size": 18, "max_width": 470, "align": "center", "color": "#000000"},
+            "project_number": {"page": 0, "x": 297.5, "y": 310, "font": "Helvetica", "font_size": 12, "max_width": 420, "align": "center", "color": "#000000"},
+            "party_1_role": {"page": 0, "x": 130, "y": 270, "font": "Helvetica-Bold", "font_size": 10, "color": "#000000"},
+            "party_1_name": {"page": 0, "x": 260, "y": 270, "font": "Helvetica-Bold", "font_size": 10, "max_width": 260, "color": "#000000"},
+            "party_2_role": {"page": 0, "x": 130, "y": 247, "font": "Helvetica-Bold", "font_size": 10, "color": "#000000"},
+            "party_2_name": {"page": 0, "x": 260, "y": 247, "font": "Helvetica-Bold", "font_size": 10, "max_width": 260, "color": "#000000"},
+            "party_3_role": {"page": 0, "x": 130, "y": 224, "font": "Helvetica-Bold", "font_size": 10, "color": "#000000"},
+            "party_3_name": {"page": 0, "x": 260, "y": 224, "font": "Helvetica-Bold", "font_size": 10, "max_width": 260, "color": "#000000"},
+            "party_4_role": {"page": 0, "x": 130, "y": 201, "font": "Helvetica-Bold", "font_size": 10, "color": "#000000"},
+            "party_4_name": {"page": 0, "x": 260, "y": 201, "font": "Helvetica-Bold", "font_size": 10, "max_width": 260, "color": "#000000"},
+            "submitted_by": {"page": 0, "x": 297.5, "y": 156, "font": "Helvetica-Bold", "font_size": 12, "max_width": 420, "align": "center", "color": "#000000"},
+            "submission_date": {"page": 0, "x": 297.5, "y": 132, "font": "Helvetica", "font_size": 10, "align": "center", "color": "#000000"},
+            "footer_reference": {"page": 0, "x": 297.5, "y": 65, "font": "Helvetica", "font_size": 9, "align": "center", "color": "#000000"},
+        }
+    if kind == "index":
+        return {
+            "__index_table__": {
+                "page": 0,
+                "mask": True,
+                "mask_x": 32,
+                "mask_y": 58,
+                "mask_width": 530,
+                "mask_height": 650,
+                "x": 44,
+                "top": 690,
+                "width": 492,
+                "sr_width": 82,
+                "header_height": 58,
+                "row_height": 49,
+                "max_rows": 10,
+                "heading_font": "Impact",
+                "heading_size": 27,
+                "sr_heading_size": 25,
+                "font": "Helvetica-Bold",
+                "font_size": 14,
+                "heading_color": "#333333",
+                "color": "#000000",
+                "line_color": "#000000",
+                "line_width": 0.7,
+                "title_label": "TABLE OF CONTENTS",
+                "sr_label": "SR NO.",
+            }
+        }
+    if kind == "divider":
+        return {
+            "__masks__": [
+                {"page": 0, "x": 50, "y": 330, "width": 500, "height": 115, "color": "#FFFFFF"},
+            ],
+            "section_title": {"page": 0, "x": 297.5, "y": 385, "font": "Helvetica-Bold", "font_size": 28, "max_width": 460, "align": "center", "color": "#000000"},
+        }
+    return {}
+
+
+def effective_field_map(kind: str, field_map: dict | None) -> dict:
+    return field_map if field_map else default_field_map(kind)
+
+
 @dataclass
 class FileEntry:
     name: str

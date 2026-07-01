@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from .config import settings
 from .database import Base, SessionLocal, engine, get_db
 from .models import Document, DocumentKind, Product, Role, Submittal, SubmittalAttachment, SubmittalStatus, Template, TemplateKind, User
-from .pdf_engine import FileEntry, Section, assemble
+from .pdf_engine import FileEntry, Section, assemble, effective_field_map
 from .schemas import DocumentOut, ProductCreate, ProductOut, ProductUpdate, SubmittalCreate, SubmittalOut, SubmittalUpdate, TemplateOut, Token, UserCreate, UserOut, UserUpdate
 from .security import admin_only, create_token, current_user, hash_password, system_admin_only, verify_password
 
@@ -318,7 +318,8 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
         for doc in docs:
             add_document(doc)
     for attachment in sorted(item.attachments, key=lambda x: x.sequence):
-        grouped[section_name(attachment.name, attachment.category)].append((attachment.sequence, insertion_order, FileEntry(attachment.name, attachment.content)))
+        rank = attachment.sequence if has_custom_order else attachment.sequence
+        grouped[section_name(attachment.name, attachment.category)].append((rank, insertion_order, FileEntry(attachment.name, attachment.content)))
         insertion_order += 1
     sections = [Section(name, [entry for _, _, entry in sorted(grouped[name])]) for name in section_order if grouped[name]]
     values = {"project_name": item.project_name, "material_description": item.material_description, "cover_material_line": f"FOR {item.material_description.upper()}", "project_number": item.project_number or "", "client": item.client or "", "consultant": item.consultant or "", "main_contractor": item.main_contractor or "", "subcontractor": item.subcontractor or "", "submitted_by": item.submitted_by or "", "submitted_by_role": item.submitted_by_role or "", "submittal_number": item.number, "revision": item.revision, "submission_date": item.submission_date.isoformat(), "footer_reference": f"DATE: {item.submission_date.strftime('%d-%b-%Y').upper()} | {item.number}-R{item.revision}", "product_details": ", ".join(p.name for p in item.products)}
@@ -327,7 +328,16 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
         values[f"party_{slot}_name"] = name or ""
         values[f"party_{slot}_role"] = role
     try:
-        item.final_pdf = assemble((active_templates[TemplateKind.cover].content, active_templates[TemplateKind.cover].field_map), (active_templates[TemplateKind.index].content, active_templates[TemplateKind.index].field_map), (active_templates[TemplateKind.divider].content, active_templates[TemplateKind.divider].field_map), values, sections)
+        cover_template = active_templates[TemplateKind.cover]
+        index_template = active_templates[TemplateKind.index]
+        divider_template = active_templates[TemplateKind.divider]
+        item.final_pdf = assemble(
+            (cover_template.content, effective_field_map(TemplateKind.cover.value, cover_template.field_map)),
+            (index_template.content, effective_field_map(TemplateKind.index.value, index_template.field_map)),
+            (divider_template.content, effective_field_map(TemplateKind.divider.value, divider_template.field_map)),
+            values,
+            sections,
+        )
         item.final_sha256 = hashlib.sha256(item.final_pdf).hexdigest()
         item.status = SubmittalStatus.generated
         item.generated_at = datetime.now(timezone.utc)

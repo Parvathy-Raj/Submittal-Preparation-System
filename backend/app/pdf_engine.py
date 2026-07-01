@@ -10,12 +10,12 @@ from reportlab.pdfgen import canvas
 
 try:
     pdfmetrics.registerFont(TTFont("Calibri-Light", "/usr/share/fonts/windows/calibril.ttf"))
-except (OSError, ValueError):
+except Exception:
     pass
 
 try:
     pdfmetrics.registerFont(TTFont("Impact", "/usr/share/fonts/windows/impact.ttf"))
-except (OSError, ValueError):
+except Exception:
     pass
 
 

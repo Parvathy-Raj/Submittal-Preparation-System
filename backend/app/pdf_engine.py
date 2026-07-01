@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+﻿from dataclasses import dataclass
 from io import BytesIO
 from typing import Iterable
 from pypdf import PdfReader, PdfWriter
@@ -111,9 +111,9 @@ def _fit_text(text: str, font: str, size: float, max_width: float) -> tuple[str,
     while max_width and size > 6.5 and stringWidth(text, font, size) > max_width:
         size -= 0.25
     if max_width and stringWidth(text, font, size) > max_width:
-        while text and stringWidth(f"{text}…", font, size) > max_width:
+        while text and stringWidth(f"{text}...", font, size) > max_width:
             text = text[:-1]
-        text = f"{text}…" if text else ""
+        text = f"{text}..." if text else ""
     return text, size
 
 
@@ -296,3 +296,4 @@ def assemble(cover: tuple[bytes, dict], index: tuple[bytes, dict], divider: tupl
     result = BytesIO()
     writer.write(result)
     return result.getvalue()
+

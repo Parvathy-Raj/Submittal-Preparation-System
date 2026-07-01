@@ -80,7 +80,7 @@ Create a backend service from the same GitHub repo.
 In backend service variables, set:
 
 ```env
-RAILWAY_DOCKERFILE_PATH=backend/Dockerfile
+RAILWAY_DOCKERFILE_PATH=Dockerfile.backend
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 JWT_SECRET=<generate-a-long-random-secret>
 BOOTSTRAP_ADMIN_EMAIL=<your-admin-email>
@@ -125,7 +125,7 @@ Create another service from the same GitHub repo for the frontend.
 In frontend service variables, set:
 
 ```env
-RAILWAY_DOCKERFILE_PATH=frontend/Dockerfile
+RAILWAY_DOCKERFILE_PATH=Dockerfile.frontend
 VITE_API_URL=https://your-backend-domain.railway.app/api/v1
 ```
 
@@ -202,4 +202,3 @@ Check:
 - PostgreSQL: https://docs.railway.com/databases/postgresql
 - Public networking: https://docs.railway.com/networking/public-networking
 - Variables: https://docs.railway.com/variables/reference
-

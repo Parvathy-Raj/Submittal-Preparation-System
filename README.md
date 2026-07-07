@@ -1,26 +1,86 @@
-# Kinetics Submittal Control
+﻿# Kinetics Submittal Control
 
-Kinetics Submittal Control is a web application for preparing submission-ready material submittal packages from approved templates and controlled PDF documents.
+Kinetics Submittal Control is a web-based document controller for preparing material submittal packages. Users enter project details, select products, upload project-specific attachments, review the package index/order, and generate one final submission-ready PDF.
 
-The system acts like a digital document controller: users enter project information, select products, upload project-specific attachments, review the package index/order, and generate one final merged PDF. Approved template PDFs and source document PDFs are preserved; the system only overlays dynamic text on templates and arranges/merges existing PDFs.
+The system preserves approved PDF templates and existing PDF documents. It only overlays dynamic text on cover/index/divider templates, arranges the selected documents, and merges everything into the final submittal package.
 
-## Current version highlights
+## Current version
 
-- Kinetics-branded React UI with local logo and favicon assets.
-- Admin and user role separation.
-- PostgreSQL storage for metadata and PDF/template binaries.
-- Approved cover, index, and divider PDF templates.
-- Dynamic cover page fields for project, material/submittal title, client/consultant/main contractor/subcontractor/submitted by, revision, date, and submittal number.
-- Product list managed by admin.
-- Multiple product document uploads per product.
-- Product-to-document mapping.
-- Product dropdown in new submittal form.
-- Project-specific attachments by divider section.
+Current version date: 07 July 2026
+
+This version includes:
+
+- Railway cloud deployment support.
+- React frontend with modern blue/white Kinetics-themed UI.
+- FastAPI backend with PostgreSQL.
+- JWT authentication.
+- Role-based access:
+  - `system_admin`
+  - `admin`
+  - `user`
+- System admin user management:
+  - create users/admins
+  - edit name/email/password/role
+  - activate/deactivate accounts
+- Admin product management.
+- Multiple PDF uploads per product.
+- Product document categories including:
+  - Proposed Materials
+  - Product Catalogues
+  - Test Reports
+  - Country of Origin
+  - Draft Warranty Certificate
+  - Compliance
+- User-only product viewing; normal users cannot create products.
+- New submittal form with:
+  - project details
+  - material/submittal title
+  - client/consultant/main contractor/subcontractor
+  - submitted-by company dropdown
+  - product selection from database
+  - project-specific attachment uploads by index/divider section
+  - custom index/divider sections
 - Editable package `INDEX` before generation.
-- Divider/index order can be rearranged before generating.
-- Final index page follows the rearranged divider order.
-- Index page renders in the approved table style: `TABLE OF CONTENTS` and `SR NO.`
-- Existing company, product, and project PDFs are appended unchanged.
+- Divider/index order rearrangement.
+- Document order rearrangement inside each divider.
+- Generated index page follows the selected divider order.
+- Index page uses the approved table style:
+  - `TABLE OF CONTENTS`
+  - `SR NO.`
+  - no page numbers
+  - no individual document list
+- Draft/failed submittals can be reopened and edited.
+- Generated/completed submittals are counted in analytics; drafts/failed records are excluded.
+- Interactive admin analytics dashboard with user-wise bar chart and time filters.
+- Browser back button works between app pages instead of logging the user out.
+- Broken UI encoding characters fixed.
+- Railway missing-font crash fixed.
+- Cover page fallback layout tuned for the approved Kinetics cover template.
+- Existing company/product/project PDFs remain unchanged.
+
+## Live Railway deployment
+
+The system has been prepared for Railway deployment using separate services:
+
+1. PostgreSQL database
+2. Backend API
+3. Frontend web app
+
+Railway-specific Dockerfiles:
+
+```text
+Dockerfile.backend
+Dockerfile.frontend
+```
+
+Current Railway URL examples used during deployment:
+
+```text
+Backend:  https://backend-production-8fad.up.railway.app
+Frontend: https://frontend-production-d60c0.up.railway.app
+```
+
+These URLs may change if Railway services/domains are regenerated.
 
 ## Architecture
 
@@ -30,10 +90,10 @@ The system acts like a digital document controller: users enter project informat
 |   |-- app/
 |   |   |-- main.py          # FastAPI routes and generation workflow
 |   |   |-- models.py        # SQLAlchemy models
-|   |   |-- schemas.py       # Pydantic request/response schemas
+|   |   |-- schemas.py       # Pydantic schemas
 |   |   |-- pdf_engine.py    # Template overlay and PDF assembly
 |   |   |-- security.py      # JWT auth and role checks
-|   |   |-- database.py      # Database session/engine
+|   |   |-- database.py      # Database engine/session
 |   |   `-- config.py        # Environment settings
 |   `-- tests/
 |-- frontend/
@@ -41,11 +101,17 @@ The system acts like a digital document controller: users enter project informat
 |   |   |-- main.tsx         # React application
 |   |   |-- api.ts           # API client
 |   |   |-- styles.css       # Base UI styles
-|   |   |-- management.css   # Admin/product/submittal UI styles
-|   |   `-- kinetics.css     # Kinetics-branded theme
+|   |   |-- management.css   # Management UI styles
+|   |   `-- kinetics.css     # Kinetics theme
 |   `-- public/
 |       |-- kinetics-logo.png
 |       `-- favicon.jpg
+|-- docs/
+|   |-- Deployment_Options_Comparison.docx
+|   |-- Deployment_Options_Comparison.md
+|   `-- Railway_Deployment_Guide.md
+|-- Dockerfile.backend
+|-- Dockerfile.frontend
 |-- docker-compose.yml
 `-- README.md
 ```
@@ -56,26 +122,25 @@ Technology stack:
 - Backend: Python FastAPI, SQLAlchemy 2, Pydantic
 - Database: PostgreSQL
 - PDF processing: pypdf and ReportLab
-- Deployment/dev runtime: Docker Compose
+- Local runtime: Docker Compose
+- Cloud deployment: Railway
 
-## Quick start
+## Local quick start
 
 ### 1. Install Docker Desktop
 
 Install Docker Desktop for Windows and make sure Docker Engine is running.
 
-In PowerShell, check:
+Check from PowerShell:
 
 ```powershell
 docker version
 docker compose version
 ```
 
-If Docker says it cannot connect to the Docker API or Docker daemon, open Docker Desktop and wait until it says the engine is running.
-
 ### 2. Create `.env`
 
-Create a `.env` file in the project root:
+Create `.env` in the project root:
 
 ```env
 POSTGRES_DB=submittals
@@ -89,9 +154,13 @@ MAX_UPLOAD_MB=100
 VITE_API_URL=http://localhost:8000/api/v1
 ```
 
-For production, change `POSTGRES_PASSWORD`, `JWT_SECRET`, and the bootstrap admin password.
+For production, change:
 
-### 3. Start the application
+- `POSTGRES_PASSWORD`
+- `JWT_SECRET`
+- `BOOTSTRAP_ADMIN_PASSWORD`
+
+### 3. Start locally
 
 From the project root:
 
@@ -104,75 +173,162 @@ Open:
 - Web app: [http://localhost:8080](http://localhost:8080)
 - API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-Default bootstrap admin:
+Default local bootstrap admin:
 
 ```text
 Email: admin@example.com
 Password: ChangeMe123!
 ```
 
-The bootstrap admin is created automatically if it does not already exist.
+Note: changing `BOOTSTRAP_ADMIN_PASSWORD` after the user already exists does not reset the existing password.
+
+## Railway deployment
+
+Railway deployment uses three services.
+
+### PostgreSQL service
+
+Create a Railway PostgreSQL database service.
+
+The backend should use the database variable:
+
+```env
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
+If the Railway database service has a different name, update `Postgres` accordingly.
+
+### Backend service variables
+
+Use the same GitHub repository and set:
+
+```env
+RAILWAY_DOCKERFILE_PATH=Dockerfile.backend
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET=<long-random-secret>
+BOOTSTRAP_ADMIN_EMAIL=<admin-email>
+BOOTSTRAP_ADMIN_PASSWORD=<temporary-admin-password>
+JWT_MINUTES=480
+MAX_UPLOAD_MB=100
+CORS_ORIGINS=http://localhost:8080,https://your-frontend-domain.up.railway.app
+CORS_ORIGIN_REGEX=https://.*\.railway\.app
+```
+
+Backend health check:
+
+```text
+https://your-backend-domain.up.railway.app/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+### Frontend service variables
+
+Use the same GitHub repository and set:
+
+```env
+RAILWAY_DOCKERFILE_PATH=Dockerfile.frontend
+VITE_API_URL=https://your-backend-domain.up.railway.app/api/v1
+```
+
+When generating the frontend public domain, use port:
+
+```text
+8080
+```
+
+### Railway notes
+
+- Keep the GitHub repository private.
+- Do not delete the Railway PostgreSQL service; it contains deployed data.
+- Uploaded PDFs/templates are stored in PostgreSQL.
+- Configure backups before using real company data.
+- After code changes, push to GitHub and redeploy the affected Railway service.
+- Frontend changes require frontend redeploy.
+- Backend/API/PDF changes require backend redeploy.
+
+More details are in:
+
+[docs/Railway_Deployment_Guide.md](docs/Railway_Deployment_Guide.md)
 
 ## User roles
 
+### System admin
+
+System admin can:
+
+- Manage all users and admins.
+- Change names, emails, passwords, roles, and active status.
+- Access admin features.
+- View analytics.
+
+Safeguards:
+
+- A system admin cannot deactivate their own account.
+- A system admin cannot remove their own system admin role.
+
 ### Admin
 
-Admins can:
+Admin can:
 
-- Upload and replace approved templates.
+- Upload approved templates.
 - Upload controlled standard documents.
-- Create product records.
-- Upload multiple PDF files for each product.
-- Assign document types/categories to product files.
-- Edit product details and mapped files.
-- Manage users.
-- View, generate, and download submittals.
+- Create and edit products.
+- Upload multiple product PDFs.
+- Map product documents to product records.
+- View products/documents/templates.
+- Create and generate submittals.
+- View analytics.
 
 ### User
 
-Users can:
+User can:
 
 - View available products and product document details.
 - Create new submittals.
-- Select products from the product list.
+- Select products.
 - Upload project-specific attachments.
-- Review and rearrange the package index/order before generation.
-- Generate and download final submittal PDFs.
+- Review/rearrange package index/order.
+- Generate/download final PDFs.
 
-Users cannot create products or manage templates/documents.
+User cannot:
+
+- Create products.
+- Manage templates.
+- Manage controlled documents.
+- Manage users.
 
 ## Admin setup workflow
 
-Before users generate submittals, an admin should complete this setup:
+Before users generate submittals, an admin/system admin should:
 
-1. Sign in as admin.
-2. Upload active templates:
+1. Upload active templates:
    - `cover`
    - `index`
    - `divider`
-3. Upload standard company documents, such as:
+2. Upload standard company documents:
    - Company Profile
    - Trade License
    - List of Previous Projects
    - Previous Approvals
-4. Create products in `Product list`.
-5. For each product, upload one or more product PDFs by type, such as:
-   - Proposed Materials
-   - Product Catalogues
-   - Test Reports
-   - Country of Origin
-   - Draft Warranty Certificate
-   - Compliance
-6. Add user accounts if needed.
+   - other company standard documents
+3. Create products in `Product list`.
+4. Upload one or more PDFs for each product by document type.
+5. Create user accounts.
+6. Test a sample submittal generation.
 
 ## New submittal workflow
 
-1. User opens `New submittal`.
-2. User enters project information:
+1. Open `New submittal`.
+2. Enter project information:
    - Submittal number
    - Revision
    - Project name
-   - Material / submittal title
+   - Material/submittal title
    - Project number
    - Client
    - Consultant
@@ -181,27 +337,38 @@ Before users generate submittals, an admin should complete this setup:
    - Submitted by
    - Submitted by role
    - Submission date
-3. User selects products from the product dropdown.
-4. System automatically collects mapped product documents.
-5. User uploads optional project-specific PDFs by divider section.
-6. User opens `INDEX`.
-7. User reviews and rearranges divider order and document order.
-8. User clicks `Create and generate PDF`.
-9. System generates the final PDF.
-10. User downloads the package from the dashboard.
+3. Select products from the product dropdown.
+4. System fetches matching product documents.
+5. Upload optional project-specific PDFs by divider section.
+6. Add custom index/divider sections if required.
+7. Open `INDEX`.
+8. Rearrange divider order and document order.
+9. Generate PDF.
+10. Download final package from dashboard.
+
+## Draft editing
+
+When a submittal remains in `draft` or `failed` status:
+
+- It appears in Recent Submittals with an `Edit` button.
+- Clicking `Edit` reopens the saved submittal in the New Submittal form.
+- The form preloads project information, selected products, section order, and document order.
+- The user can update and generate again.
+
+Generated submittals cannot be edited directly. Create a new revision instead.
 
 ## Submitted by options
 
-The `Submitted by` field is a dropdown with:
+The `Submitted by` dropdown includes:
 
 - Kinetics Middle East LLC
 - Kinetics Acoustic Services LLC
 - Kinetics Sound and Vibration Control
 - Kinetics Metal Construction Industries LLC
 
-## Document sections
+## Package sections
 
-The package currently supports these divider sections:
+Default divider/index sections:
 
 1. Company Profile
 2. Trade License
@@ -213,23 +380,23 @@ The package currently supports these divider sections:
 8. List of Previous Projects
 9. Previous Approvals
 
-The user can rearrange these before generation in the `INDEX` review section.
+Users can add custom sections during submittal creation.
 
 ## Dynamic index behavior
 
-The index page uses the approved index PDF template as its background/base.
+The generated index page uses the approved index PDF template as the background/base.
 
-The system overlays a dynamic table matching the template style:
+The system overlays a table with:
 
-- Left heading: `TABLE OF CONTENTS`
-- Right heading: `SR NO.`
-- One row per divider section
-- Divider names in uppercase
-- Serial numbers in the right column
-- No document list
-- No page numbers
+- `TABLE OF CONTENTS`
+- `SR NO.`
+- one row per divider section
+- uppercase divider names
+- serial numbers only
+- no page numbers
+- no individual document list
 
-If the user rearranges the dividers in the `INDEX` review section, the generated index table follows that same order.
+The generated index follows the rearranged package order.
 
 Example:
 
@@ -248,20 +415,27 @@ PREVIOUS APPROVALS                           9
 
 ## PDF generation rules
 
-The PDF engine follows these rules:
-
-- Approved template PDFs are used as-is.
-- Dynamic text is added as an overlay.
+- Approved template PDFs remain the base design.
+- Dynamic fields are overlaid on cover/index/divider pages.
 - Existing document PDFs are never edited.
 - Original document quality is preserved.
-- Original page sizes/media boxes are preserved.
+- Original page sizes are preserved.
+- Standard documents are added from the controlled document library.
 - Product documents are fetched from product mappings.
-- Project-specific attachments are inserted into their selected divider sections.
-- Documents are merged according to the reviewed package order.
+- Project attachments are inserted under selected divider sections.
+- Final package follows the reviewed index/order.
 
 ## Template field maps
 
-Templates can include a JSON field map. Coordinates are PDF points from the bottom-left corner.
+Templates may include JSON field maps. Coordinates are PDF points from the bottom-left corner.
+
+If a template field map is empty (`{}`), the backend uses built-in Kinetics fallback maps for:
+
+- cover
+- index
+- divider
+
+These fallback maps are tuned to the approved Kinetics cover/index/divider templates used during deployment.
 
 Example cover field:
 
@@ -270,17 +444,17 @@ Example cover field:
   "project_name": {
     "page": 0,
     "x": 306,
-    "y": 535,
+    "y": 527,
     "font": "Calibri-Light",
-    "font_size": 60,
+    "font_size": 56,
     "align": "center",
     "color": "#FF0000",
-    "max_width": 430
+    "max_width": 500
   }
 }
 ```
 
-Supported common properties:
+Common supported field properties:
 
 - `page`
 - `x`
@@ -294,7 +468,7 @@ Supported common properties:
 - `underline`
 - `underline_width`
 
-Templates may also use `__masks__` to cover fixed text areas before dynamic text is drawn.
+Templates may also use `__masks__` to cover old/sample template text before drawing dynamic values.
 
 Example:
 
@@ -303,38 +477,64 @@ Example:
   "__masks__": [
     {
       "page": 0,
-      "x": 82,
-      "y": 515,
-      "width": 448,
-      "height": 78,
+      "x": 105,
+      "y": 100,
+      "width": 405,
+      "height": 585,
       "color": "#FFFFFF"
     }
   ]
 }
 ```
 
-The active index template can have an empty field map. In that case, the backend uses the built-in Kinetics table overlay style.
+## Analytics dashboard
+
+Admins/system admins can view analytics in Overview.
+
+Analytics includes:
+
+- user-wise submittal count bar chart
+- month/year/date-range/all filters
+- selected user detail view
+- completed/generated submittal counts only
+
+Draft and failed submittals are not counted in the report chart.
+
+## Browser navigation
+
+The frontend uses hash-based page navigation:
+
+```text
+#dashboard
+#new
+#products
+#documents
+#templates
+#users
+```
+
+Browser Back/Forward moves between app pages.
+
+Logout happens only when the logout button is clicked.
 
 ## Local logo assets
 
-The app serves the Kinetics logo locally from:
+Logo and favicon are served locally:
 
 ```text
 frontend/public/kinetics-logo.png
 frontend/public/favicon.jpg
 ```
 
-This avoids missing logos in Chrome due to external image blocking or network issues.
+Local logo URL:
 
-If the logo does not appear after rebuilding, hard refresh Chrome:
+[http://localhost:8080/kinetics-logo.png](http://localhost:8080/kinetics-logo.png)
+
+If the logo does not update, hard refresh:
 
 ```text
 Ctrl + Shift + R
 ```
-
-You can also verify the logo directly:
-
-[http://localhost:8080/kinetics-logo.png](http://localhost:8080/kinetics-logo.png)
 
 ## Useful Docker commands
 
@@ -344,19 +544,19 @@ Start/rebuild all services:
 docker compose up -d --build
 ```
 
-Rebuild only frontend:
+Rebuild frontend:
 
 ```powershell
 docker compose up -d --build web
 ```
 
-Rebuild only backend:
+Rebuild backend:
 
 ```powershell
 docker compose up -d --build api
 ```
 
-Check service status:
+Check services:
 
 ```powershell
 docker compose ps
@@ -374,17 +574,17 @@ Stop services:
 docker compose down
 ```
 
-Stop services and remove database volume:
+Stop services and delete local DB volume:
 
 ```powershell
 docker compose down -v
 ```
 
-Use `down -v` carefully because it deletes the PostgreSQL data volume.
+Use `down -v` carefully because it deletes local PostgreSQL data.
 
 ## Development without Docker
 
-Docker Compose is the recommended workflow, but local development is possible.
+Docker Compose is recommended. Local development is also possible.
 
 ### Backend
 
@@ -396,8 +596,6 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The backend expects PostgreSQL to be available and `DATABASE_URL` to be set.
-
 ### Frontend
 
 ```powershell
@@ -406,35 +604,39 @@ npm install
 npm run dev
 ```
 
-Frontend dev server usually runs at:
+Frontend dev server:
 
 [http://localhost:5173](http://localhost:5173)
 
 ## Tests and checks
 
-Run backend tests inside the API container:
+Run backend tests:
 
 ```powershell
 docker compose exec api pytest
 ```
 
-Run a Python syntax check:
-
-```powershell
-docker compose exec api python -m py_compile app/pdf_engine.py app/main.py
-```
-
 Build frontend:
 
 ```powershell
-docker compose up -d --build web
+docker compose build web
+```
+
+Build Railway backend image:
+
+```powershell
+docker build -f Dockerfile.backend -t submittal-railway-backend-test .
+```
+
+Build Railway frontend image:
+
+```powershell
+docker build -f Dockerfile.frontend -t submittal-railway-frontend-test .
 ```
 
 ## Troubleshooting
 
 ### PowerShell opens in `C:\Windows\System32`
-
-That is normal when PowerShell is opened as administrator or from some shortcuts.
 
 Go to the project folder:
 
@@ -442,27 +644,19 @@ Go to the project folder:
 cd "C:\Users\parvathy\Documents\Submittal Preparation System"
 ```
 
-Then run Docker commands from there.
+### Docker is not recognized
 
-### `docker` is not recognized
+Install Docker Desktop and restart PowerShell.
 
-Docker Desktop is not installed or its CLI is not in PATH.
-
-Install Docker Desktop, restart PowerShell, and check:
+Check:
 
 ```powershell
 docker version
 ```
 
-### Cannot connect to Docker API / daemon
+### Cannot connect to Docker daemon
 
-Open Docker Desktop and wait until Docker Engine has started.
-
-Then retry:
-
-```powershell
-docker compose ps
-```
+Open Docker Desktop and wait until Docker Engine is running.
 
 ### Missing active templates
 
@@ -474,63 +668,110 @@ Missing active templates: cover, index, divider
 
 Fix:
 
-1. Sign in as admin.
+1. Sign in as admin/system admin.
 2. Go to `Templates`.
-3. Upload one active template for each kind:
+3. Upload one active template for:
    - `cover`
    - `index`
    - `divider`
 
-### Logo not visible in Chrome
+### PDF cover/index/divider not customized
 
-Hard refresh:
+Check:
+
+- active templates exist
+- template kind is correct
+- backend was redeployed after PDF engine changes
+- generated PDF is new, not an old stored output
+
+If templates use `{}` as field map, the built-in fallback maps are used.
+
+### Railway backend Application Not Found
+
+Usually the old Railway domain was replaced or the service was deleted.
+
+Use the current backend service domain from Railway.
+
+### Railway frontend Application failed to respond
+
+Check frontend public domain port:
 
 ```text
-Ctrl + Shift + R
+8080
 ```
 
-Verify:
+Check frontend variable:
 
-[http://localhost:8080/kinetics-logo.png](http://localhost:8080/kinetics-logo.png)
+```env
+VITE_API_URL=https://your-backend-domain.up.railway.app/api/v1
+```
 
-### Duplicate product code
+### Login says Request failed
 
-Product codes are allowed to repeat because manufacturer document codes may be shared by multiple variants.
+Check:
+
+- backend is online
+- `VITE_API_URL` points to backend `/api/v1`
+- backend `CORS_ORIGINS` includes the frontend URL
+- account is active
+- password is correct
+
+### Bootstrap admin password does not work
+
+The bootstrap password is only used when the account is first created.
+
+If the account already exists, changing `BOOTSTRAP_ADMIN_PASSWORD` does not reset it.
+
+Reset the password through system admin user management or directly in the database.
+
+### Broken or corrupted UI text
+
+This can be caused by encoding corruption in UI strings.
+
+The current version uses plain safe characters such as `-` and `...`.
+
+If this appears again, search the frontend source for mojibake/corrupted character sequences and replace them with plain text.
+
+### Duplicate product codes
+
+Product codes may repeat because manufacturer/product document codes can be shared by variants.
 
 ### Duplicate document names
 
-Different products may use documents with the same display name and revision, for example `COMPLIANCE 1` revision `0`.
-
-The system allows this. Identical PDFs are reused by SHA-256 hash to avoid duplicate binary storage.
+Documents with the same name/revision can exist for different products.
 
 ## Production notes
 
-- Change all secrets before deployment.
-- Put the API behind HTTPS/TLS.
+- Keep Railway/GitHub access restricted.
+- Keep the GitHub repository private.
 - Use a strong `JWT_SECRET`.
-- Rotate or disable the bootstrap admin after creating named admin accounts.
+- Change temporary bootstrap/admin passwords.
+- Create named admin accounts instead of sharing one admin login.
 - Configure PostgreSQL backups.
-- Confirm storage growth, because PDF binaries are stored in PostgreSQL.
-- Add antivirus/malware scanning for uploads at the ingress boundary.
-- Set reverse proxy upload limits to match `MAX_UPLOAD_MB`.
-- For high-volume usage, move PDF generation to a background worker queue.
-- Keep approved templates under document control and revise them deliberately.
+- Monitor Railway usage/billing.
+- Confirm upload limits before large PDF usage.
+- Store only approved documents/templates.
+- Do not delete Railway PostgreSQL service unless data is intentionally being removed.
+- Consider antivirus/malware scanning for uploaded files before wider rollout.
 
 ## Data storage
 
 PostgreSQL stores:
 
-- Users
-- Products
-- Documents
-- Templates
-- Product-document mappings
-- Submittal records
-- Project attachments
-- Generated final PDFs
+- users
+- products
+- documents
+- templates
+- product-document mappings
+- submittal records
+- project attachments
+- generated final PDFs
 
-PDF and template binaries are stored in database `BYTEA` columns, matching the project requirement.
+PDF/template binaries are stored in PostgreSQL `BYTEA` columns.
 
 ## Important operating note
 
-Generated PDFs are stored as final outputs. If template logic or ordering behavior changes, old generated PDFs do not update automatically. Regenerate the submittal to produce a new final PDF with the latest behavior.
+Generated PDFs are stored as final output files. If template logic, index order, or cover layout changes later, old generated PDFs do not update automatically.
+
+Regenerate the submittal to produce a new final PDF with the latest behavior.
+

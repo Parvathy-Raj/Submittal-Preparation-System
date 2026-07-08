@@ -995,6 +995,68 @@ input:focus,select:focus,textarea:focus{
   padding:20px;
 }
 
+.submittal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:18px;
+}
+
+.modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:grid;
+  place-items:center;
+  background:rgba(15,23,42,.42);
+  padding:24px;
+}
+
+.leave-modal{
+  width:min(480px,100%);
+  background:#fff;
+  border-radius:20px;
+  padding:26px;
+  box-shadow:0 30px 80px rgba(15,23,42,.28);
+  border:1px solid #dbe7f5;
+}
+
+.leave-modal h2{
+  margin:0 0 8px;
+  color:#102a4c;
+  font-size:22px;
+}
+
+.leave-modal p{
+  margin:0;
+  color:#64748b;
+  line-height:1.5;
+}
+
+.leave-modal div{
+  display:flex;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:22px;
+}
+
+.leave-modal button{
+  border:1px solid #cfe0f4;
+  background:#fff;
+  border-radius:12px;
+  padding:10px 14px;
+  color:#102a4c;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.leave-modal button:disabled,
+.submittal-actions button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
 @media(max-width:1100px){
   .overview-cards,
   .dashboard-chart-grid{

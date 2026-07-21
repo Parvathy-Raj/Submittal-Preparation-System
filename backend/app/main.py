@@ -351,6 +351,19 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
     return item
 
 
+@app.delete("/api/v1/submittals/{submittal_id}", status_code=204)
+def delete_submittal(submittal_id: str, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+    try:
+        item = db.get(Submittal, uuid.UUID(submittal_id))
+    except ValueError:
+        item = None
+    if not item:
+        raise HTTPException(404, "Submittal not found")
+    db.delete(item)
+    db.commit()
+    return Response(status_code=204)
+
+
 @app.get("/api/v1/submittals/{submittal_id}/download")
 def download(submittal_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     try:

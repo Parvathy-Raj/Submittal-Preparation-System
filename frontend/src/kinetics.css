@@ -1057,6 +1057,17 @@ input:focus,select:focus,textarea:focus{
   cursor:not-allowed;
 }
 
+.submittal-row-actions{
+  display:flex!important;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.submittal-row-actions .danger{
+  color:#b42318;
+}
+
 @media(max-width:1100px){
   .overview-cards,
   .dashboard-chart-grid{

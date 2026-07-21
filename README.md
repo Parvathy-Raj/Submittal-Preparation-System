@@ -354,7 +354,7 @@ Generated submittals cannot be edited directly. Create a new revision if changes
 The Submitted by dropdown includes:
 
 - Kinetics Middle East LLC
-- Kinetics Acoustic Services LLC
+- Kinetics Acoustics Technical Services LLC
 - Kinetics Sound and Vibration Control
 - Kinetics Metal Construction Industries LLC
 

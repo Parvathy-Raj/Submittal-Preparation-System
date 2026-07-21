@@ -76,7 +76,7 @@ function Dashboard({user,subs,products,docs,onDownload,onEditDraft,onDelete}:{us
 }
 
 function NewSubmittal({products,docs,draft,registerDraftGuard,done}:{products:Product[];docs:Doc[];draft:Submittal|null;registerDraftGuard:(isDirty:boolean, saveDraft:(()=>Promise<void>)|null)=>void;done:()=>void}) {
-  const submittedByOptions=["Kinetics Middle East LLC","Kinetics Acoustic Services LLC","Kinetics Sound and Vibration Control","Kinetics Metal Construction Industries LLC"];
+  const submittedByOptions=["Kinetics Middle East LLC","Kinetics Acoustics Technical Services LLC","Kinetics Sound and Vibration Control","Kinetics Metal Construction Industries LLC"];
   const [data,setData]=useState({number:"",revision:"0",project_name:"",material_description:"Acoustic Treatment",project_number:"",client:"",consultant:"",main_contractor:"",subcontractor:"",submitted_by:submittedByOptions[0],submitted_by_role:"Acoustic Specialist",submission_date:new Date().toISOString().slice(0,10)});
   const packageSections=["Company Profile","Trade License","Proposed Materials","Product Catalogues","Test Reports","Country of Origin","Draft Warranty Certificate","List of Previous Projects","Previous Approvals"];
   type PendingAttachment={id:string;file:File;category:string};

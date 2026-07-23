@@ -24,7 +24,7 @@ Latest updates include:
 - Draft/In progress submittals can be reopened and continued.
 - Generated submittals can be downloaded.
 - Draft and failed submittals can be edited.
-- Completed/generated submittals are protected from editing.
+- Completed/generated submittals can be reopened for customer comment revisions.
 - Product list supports multiple documents per product.
 - Product documents are fetched automatically during submittal generation.
 - Product documents can use fixed or custom index/document types.
@@ -362,7 +362,7 @@ Drafts preserve:
 - selected document order
 - uploaded project attachments saved before leaving
 
-Generated submittals cannot be edited directly. Create a new revision if changes are required after generation.
+Generated submittals can also be reopened with `Edit`. After changes are saved, the submittal moves back to draft/in-progress until the revised PDF is generated again.
 
 ## Submitted by options
 

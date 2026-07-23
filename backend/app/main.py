@@ -245,8 +245,6 @@ def update_submittal(submittal_id: str, payload: SubmittalUpdate, user: User = D
         item = None
     if not item or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
         raise HTTPException(404, "Submittal not found")
-    if item.status == SubmittalStatus.generated:
-        raise HTTPException(409, "Generated submittals cannot be edited. Create a new revision instead.")
     products = db.scalars(select(Product).where(Product.id.in_(payload.product_ids), Product.is_active.is_(True))).all() if payload.product_ids else []
     data = payload.model_dump(exclude={"product_ids", "document_order", "section_order"})
     for field, value in data.items():

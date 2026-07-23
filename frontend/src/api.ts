@@ -51,5 +51,15 @@ class Api {
     window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
+  async previewSubmittal(id:string) {
+    const response = await fetch(`${BASE}/submittals/${id}/preview`, {headers:{Authorization:`Bearer ${this.token}`}});
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || "Preview failed");
+    }
+    const url = URL.createObjectURL(await response.blob());
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
 }
 export const api = new Api();

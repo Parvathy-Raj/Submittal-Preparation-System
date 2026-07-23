@@ -299,12 +299,33 @@ def add_attachment(submittal_id: str, name: str = Form(), category: str = Form("
 
 @app.post("/api/v1/submittals/{submittal_id}/generate", response_model=SubmittalOut)
 def generate_submittal(submittal_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    item = get_submittal_for_user(submittal_id, user, db)
+    try:
+        item.final_pdf = build_submittal_pdf(item, db)
+        item.final_sha256 = hashlib.sha256(item.final_pdf).hexdigest()
+        item.status = SubmittalStatus.generated
+        item.generated_at = datetime.now(timezone.utc)
+        item.error_message = None
+    except Exception as exc:
+        item.status = SubmittalStatus.failed
+        item.error_message = str(exc)[:2000]
+        db.commit()
+        raise HTTPException(422, f"PDF generation failed: {exc}") from exc
+    db.commit(); db.refresh(item)
+    return item
+
+
+def get_submittal_for_user(submittal_id: str, user: User, db: Session) -> Submittal:
     try:
         item = db.get(Submittal, uuid.UUID(submittal_id))
     except ValueError:
         item = None
     if not item or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
         raise HTTPException(404, "Submittal not found")
+    return item
+
+
+def build_submittal_pdf(item: Submittal, db: Session) -> bytes:
     active_template_list = db.scalars(select(Template).where(Template.is_active.is_(True))).all()
     active_templates = {t.kind: t for t in active_template_list if t.kind != TemplateKind.cover}
     missing = [kind.value for kind in (TemplateKind.cover, TemplateKind.index, TemplateKind.divider) if kind == TemplateKind.cover and not any(t.kind == TemplateKind.cover for t in active_template_list) or kind != TemplateKind.cover and kind not in active_templates]
@@ -359,28 +380,27 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
     for slot, (role, name) in enumerate(((role, name) for role, name in parties if name), 1):
         values[f"party_{slot}_name"] = name or ""
         values[f"party_{slot}_role"] = role
+    cover_template = select_cover_template(active_template_list, item.submitted_by)
+    index_template = active_templates[TemplateKind.index]
+    divider_template = active_templates[TemplateKind.divider]
+    return assemble(
+        (cover_template.content, effective_field_map(TemplateKind.cover.value, cover_template.field_map)),
+        (index_template.content, effective_field_map(TemplateKind.index.value, index_template.field_map)),
+        (divider_template.content, effective_field_map(TemplateKind.divider.value, divider_template.field_map)),
+        values,
+        sections,
+    )
+
+
+@app.get("/api/v1/submittals/{submittal_id}/preview")
+def preview_submittal(submittal_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    item = get_submittal_for_user(submittal_id, user, db)
     try:
-        cover_template = select_cover_template(active_template_list, item.submitted_by)
-        index_template = active_templates[TemplateKind.index]
-        divider_template = active_templates[TemplateKind.divider]
-        item.final_pdf = assemble(
-            (cover_template.content, effective_field_map(TemplateKind.cover.value, cover_template.field_map)),
-            (index_template.content, effective_field_map(TemplateKind.index.value, index_template.field_map)),
-            (divider_template.content, effective_field_map(TemplateKind.divider.value, divider_template.field_map)),
-            values,
-            sections,
-        )
-        item.final_sha256 = hashlib.sha256(item.final_pdf).hexdigest()
-        item.status = SubmittalStatus.generated
-        item.generated_at = datetime.now(timezone.utc)
-        item.error_message = None
+        pdf = build_submittal_pdf(item, db)
     except Exception as exc:
-        item.status = SubmittalStatus.failed
-        item.error_message = str(exc)[:2000]
-        db.commit()
-        raise HTTPException(422, f"PDF generation failed: {exc}") from exc
-    db.commit(); db.refresh(item)
-    return item
+        raise HTTPException(422, f"PDF preview failed: {exc}") from exc
+    filename = f"PREVIEW-{item.number}-R{item.revision}.pdf".replace("/", "-")
+    return StreamingResponse(BytesIO(pdf), media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
 
 
 @app.delete("/api/v1/submittals/{submittal_id}", status_code=204)

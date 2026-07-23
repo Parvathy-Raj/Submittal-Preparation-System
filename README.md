@@ -300,7 +300,7 @@ Supported product document categories include:
 - Test Reports
 - Country of Origin
 - Draft Warranty Certificate
-- Compliance
+- General Compliance Statement
 
 Admins can also add custom product document/index types while creating or editing a product.
 

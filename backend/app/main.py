@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
         connection.execute(text("CREATE INDEX IF NOT EXISTS ix_products_code ON products (code)"))
         connection.execute(text("UPDATE products SET code = BTRIM(code) WHERE code <> BTRIM(code)"))
         connection.execute(text("UPDATE documents SET category = 'List of Previous Projects' WHERE kind = 'standard' AND (LOWER(name) LIKE '%list of project%' OR LOWER(name) LIKE '%project list%')"))
+        connection.execute(text("UPDATE documents SET category = 'General Compliance Statement' WHERE kind = 'product' AND category = 'Compliance'"))
         connection.execute(text("UPDATE users SET role = 'system_admin' WHERE email = :email"), {"email": settings.bootstrap_admin_email.lower()})
     with SessionLocal() as db:
         if not db.scalar(select(User).where(User.email == settings.bootstrap_admin_email.lower())):
@@ -330,10 +331,10 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
             return category
         combined = name.lower()
         if category == "Compliance":
-            return "Proposed Materials"
+            return "General Compliance Statement"
         if category and category not in {"General", "Product Document"}:
             return category
-        rules = (("company profile", "Company Profile"), ("trade license", "Trade License"), ("proposed material", "Proposed Materials"), ("general compliance statement", "General Compliance Statement"), ("compliance statement", "General Compliance Statement"), ("compliance", "Proposed Materials"), ("datasheet", "Product Catalogues"), ("data sheet", "Product Catalogues"), ("catalog", "Product Catalogues"), ("test", "Test Reports"), ("country of origin", "Country of Origin"), ("warranty", "Draft Warranty Certificate"), ("list of project", "List of Previous Projects"), ("project list", "List of Previous Projects"), ("previous project", "List of Previous Projects"), ("approval", "Previous Approvals"))
+        rules = (("company profile", "Company Profile"), ("trade license", "Trade License"), ("proposed material", "Proposed Materials"), ("general compliance statement", "General Compliance Statement"), ("compliance statement", "General Compliance Statement"), ("compliance", "General Compliance Statement"), ("datasheet", "Product Catalogues"), ("data sheet", "Product Catalogues"), ("catalog", "Product Catalogues"), ("test", "Test Reports"), ("country of origin", "Country of Origin"), ("warranty", "Draft Warranty Certificate"), ("list of project", "List of Previous Projects"), ("project list", "List of Previous Projects"), ("previous project", "List of Previous Projects"), ("approval", "Previous Approvals"))
         return next((section for needle, section in rules if needle in combined), "Proposed Materials")
     def add_document(doc: Document) -> None:
         nonlocal insertion_order

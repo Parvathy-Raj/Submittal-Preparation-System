@@ -27,6 +27,7 @@ Latest updates include:
 - Completed/generated submittals are protected from editing.
 - Product list supports multiple documents per product.
 - Product documents are fetched automatically during submittal generation.
+- Product documents can use fixed or custom index/document types.
 - Company-specific cover templates are supported.
 - Custom index/divider sections are supported.
 - Index order and divider order can be rearranged before generation.
@@ -300,6 +301,17 @@ Supported product document categories include:
 - Country of Origin
 - Draft Warranty Certificate
 - Compliance
+
+Admins can also add custom product document/index types while creating or editing a product.
+
+Examples:
+
+- Acoustic Calculation
+- Method Statement
+- Technical Compliance
+- Installation Manual
+
+Custom product document types are carried into New Submittal as their own index/divider sections when that product is selected.
 
 During submittal generation, selected products automatically bring their mapped documents into the correct divider sections.
 

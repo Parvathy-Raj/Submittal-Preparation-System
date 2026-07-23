@@ -314,9 +314,12 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
     standard = db.scalars(select(Document).where(Document.kind == DocumentKind.standard, Document.is_active.is_(True)).order_by(Document.sequence)).all()
     default_section_order = ["Company Profile", "Trade License", "Proposed Materials", "Product Catalogues", "Test Reports", "Country of Origin", "Draft Warranty Certificate", "List of Previous Projects", "Previous Approvals"]
     configured_sections = [str(name).strip() for name in (item.section_order or []) if str(name).strip()]
+    product_documents = [doc for product in item.products for doc in product.documents if doc.is_active]
+    document_sections = [doc.category.strip() for doc in [*standard, *product_documents] if doc.category and doc.category.strip() and doc.category.strip() not in [*default_section_order, "Compliance", "General", "Product Document"]]
     attachment_sections = [attachment.category.strip() for attachment in item.attachments if attachment.category and attachment.category.strip()]
     section_order = list(dict.fromkeys(configured_sections))
     section_order.extend(name for name in default_section_order if name not in section_order)
+    section_order.extend(name for name in document_sections if name not in section_order)
     section_order.extend(name for name in attachment_sections if name not in section_order)
     grouped: dict[str, list[tuple[int, int, FileEntry]]] = {name: [] for name in section_order}
     custom_rank = {str(document_id): rank for rank, document_id in enumerate(item.document_order or []) if document_id}
@@ -330,6 +333,8 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
         combined = name.lower()
         if category == "Compliance":
             return "Proposed Materials"
+        if category and category not in {"General", "Product Document"}:
+            return category
         rules = (("company profile", "Company Profile"), ("trade license", "Trade License"), ("proposed material", "Proposed Materials"), ("compliance", "Proposed Materials"), ("datasheet", "Product Catalogues"), ("data sheet", "Product Catalogues"), ("catalog", "Product Catalogues"), ("test", "Test Reports"), ("country of origin", "Country of Origin"), ("warranty", "Draft Warranty Certificate"), ("list of project", "List of Previous Projects"), ("project list", "List of Previous Projects"), ("previous project", "List of Previous Projects"), ("approval", "Previous Approvals"))
         return next((section for needle, section in rules if needle in combined), "Proposed Materials")
     def add_document(doc: Document) -> None:

@@ -21,7 +21,13 @@ except Exception:
 
 def _available_font(requested: str) -> str:
     """Use the approved font when installed, with a safe deployment fallback."""
-    return requested if requested in pdfmetrics.getRegisteredFontNames() else "Helvetica"
+    if requested in pdfmetrics.getRegisteredFontNames():
+        return requested
+    if requested == "Impact":
+        return "Helvetica-Bold"
+    if requested == "Calibri-Light":
+        return "Helvetica"
+    return "Helvetica"
 
 
 def default_field_map(kind: str) -> dict:
@@ -33,23 +39,22 @@ def default_field_map(kind: str) -> dict:
     if kind == "cover":
         return {
             "__masks__": [
-                {"page": 0, "x": 105, "y": 100, "width": 405, "height": 585, "color": "#FFFFFF"},
+                {"page": 0, "x": 72, "y": 95, "width": 470, "height": 610, "color": "#FFFFFF"},
             ],
-            "cover_heading": {"page": 0, "x": 306, "y": 666, "literal": "MATERIAL SUBMITTAL", "font": "Calibri-Light", "font_size": 25, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "cover_material_line": {"page": 0, "x": 306, "y": 634, "font": "Calibri-Light", "font_size": 25, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "project_name": {"page": 0, "x": 306, "y": 527, "font": "Calibri-Light", "font_size": 56, "max_width": 500, "align": "center", "color": "#FF0000"},
-            "party_1_name": {"page": 0, "x": 306, "y": 418, "font": "Calibri-Light", "font_size": 24, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "party_1_role": {"page": 0, "x": 306, "y": 395, "font": "Helvetica", "font_size": 11, "max_width": 455, "align": "center", "color": "#000000"},
-            "party_2_name": {"page": 0, "x": 306, "y": 341, "font": "Calibri-Light", "font_size": 24, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "party_2_role": {"page": 0, "x": 306, "y": 318, "font": "Helvetica", "font_size": 11, "max_width": 455, "align": "center", "color": "#000000"},
-            "party_3_name": {"page": 0, "x": 306, "y": 297, "font": "Calibri-Light", "font_size": 15, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "party_3_role": {"page": 0, "x": 306, "y": 280, "font": "Helvetica", "font_size": 8, "max_width": 455, "align": "center", "color": "#000000"},
-            "party_4_name": {"page": 0, "x": 306, "y": 263, "font": "Calibri-Light", "font_size": 15, "max_width": 455, "align": "center", "color": "#244EA3"},
-            "party_4_role": {"page": 0, "x": 306, "y": 246, "font": "Helvetica", "font_size": 8, "max_width": 455, "align": "center", "color": "#000000"},
-            "prepared_by_label": {"page": 0, "x": 306, "y": 268, "literal": "PREPARED BY:", "font": "Helvetica", "font_size": 11, "align": "center", "color": "#000000"},
-            "submitted_by": {"page": 0, "x": 306, "y": 226, "font": "Calibri-Light", "font_size": 24, "max_width": 500, "align": "center", "color": "#244EA3"},
-            "submitted_by_role": {"page": 0, "x": 306, "y": 190, "font": "Helvetica", "font_size": 11, "max_width": 455, "align": "center", "color": "#000000"},
-            "footer_reference": {"page": 0, "x": 306, "y": 130, "font": "Helvetica", "font_size": 12, "max_width": 420, "align": "center", "color": "#244EA3"},
+            "cover_heading": {"page": 0, "x": 306, "y": 660, "font": "Impact", "font_size": 22, "max_width": 470, "align": "center", "color": "#0B2A64", "uppercase": True},
+            "project_name": {"page": 0, "x": 306, "y": 582, "font": "Impact", "font_size": 54, "max_width": 455, "align": "center", "color": "#FF0000", "uppercase": True, "wrap": True, "line_height": 58, "max_lines": 3},
+            "party_1_name": {"page": 0, "x": 306, "y": 405, "font": "Impact", "font_size": 24, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 25, "max_lines": 2},
+            "party_1_role": {"page": 0, "x": 306, "y": 377, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
+            "party_2_name": {"page": 0, "x": 306, "y": 342, "font": "Impact", "font_size": 24, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 25, "max_lines": 2},
+            "party_2_role": {"page": 0, "x": 306, "y": 314, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
+            "party_3_name": {"page": 0, "x": 306, "y": 279, "font": "Impact", "font_size": 23, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 24, "max_lines": 2},
+            "party_3_role": {"page": 0, "x": 306, "y": 251, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
+            "party_4_name": {"page": 0, "x": 306, "y": 234, "font": "Impact", "font_size": 20, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 21, "max_lines": 2},
+            "party_4_role": {"page": 0, "x": 306, "y": 209, "font": "Helvetica-Bold", "font_size": 10, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
+            "submitted_by_label": {"page": 0, "x": 306, "y": 184, "literal": "SUBMITTED BY:", "font": "Helvetica-Oblique", "font_size": 11, "align": "center", "color": "#0057B8", "underline": True},
+            "submitted_by": {"page": 0, "x": 306, "y": 154, "font": "Impact", "font_size": 23, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 24, "max_lines": 2},
+            "submitted_by_role": {"page": 0, "x": 306, "y": 132, "font": "Helvetica-Bold", "font_size": 11, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
+            "footer_reference": {"page": 0, "x": 306, "y": 96, "font": "Helvetica", "font_size": 11, "max_width": 420, "align": "center", "color": "#0057B8", "uppercase": True},
         }
     if kind == "index":
         return {
@@ -117,6 +122,29 @@ def _fit_text(text: str, font: str, size: float, max_width: float) -> tuple[str,
     return text, size
 
 
+def _wrap_text(text: str, font: str, size: float, max_width: float, max_lines: int) -> list[str]:
+    words = str(text).split()
+    if not words:
+        return []
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if not current or stringWidth(candidate, font, size) <= max_width:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+            if len(lines) >= max_lines:
+                break
+    if current and len(lines) < max_lines:
+        lines.append(current)
+    if len(lines) == max_lines and len(" ".join(words)) > len(" ".join(lines)):
+        fitted, _ = _fit_text(lines[-1], font, size, max_width)
+        lines[-1] = fitted
+    return lines
+
+
 def _page_count(content: bytes) -> int:
     reader = PdfReader(BytesIO(content))
     if reader.is_encrypted and reader.decrypt("") == 0:
@@ -150,11 +178,24 @@ def _overlay(template: bytes, values: dict[str, str], field_map: dict) -> bytes:
             font = _available_font(spec.get("font", "Helvetica"))
             size = float(spec.get("font_size", 10))
             max_width = float(spec.get("max_width", 0))
-            while max_width and size > 7 and stringWidth(text, font, size) > max_width:
+            if spec.get("uppercase"):
+                text = text.upper()
+            while max_width and not spec.get("wrap") and size > 7 and stringWidth(text, font, size) > max_width:
                 size -= 0.5
             pdf.setFillColor(HexColor(spec.get("color", "#000000")))
             pdf.setFont(font, size)
             x, y = float(spec["x"]), float(spec["y"])
+            if spec.get("wrap") and max_width:
+                lines = _wrap_text(text, font, size, max_width, int(spec.get("max_lines", 2)))
+                line_height = float(spec.get("line_height", size * 1.15))
+                start_y = y - (line_height * (len(lines) - 1) / 2)
+                for line_index, line in enumerate(lines):
+                    line_y = start_y - line_height * line_index
+                    if spec.get("align") == "center":
+                        pdf.drawCentredString(x, line_y, line)
+                    else:
+                        pdf.drawString(x, line_y, line)
+                continue
             if spec.get("align") == "center":
                 pdf.drawCentredString(x, y, text)
                 left = x - stringWidth(text, font, size) / 2

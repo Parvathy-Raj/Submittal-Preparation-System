@@ -383,6 +383,11 @@ def build_submittal_pdf(item: Submittal, db: Session) -> bytes:
     cover_template = select_cover_template(active_template_list, item.submitted_by)
     index_template = active_templates[TemplateKind.index]
     divider_template = active_templates[TemplateKind.divider]
+    source_bytes = len(cover_template.content) + len(index_template.content) + len(divider_template.content)
+    source_bytes += sum(len(entry.content) for section in sections for entry in section.files if isinstance(entry, FileEntry))
+    source_mb = source_bytes / 1024 / 1024
+    if source_mb > settings.max_package_source_mb:
+        raise ValueError(f"Package source PDFs total {source_mb:.1f} MB. Reduce/compress PDFs or increase MAX_PACKAGE_SOURCE_MB and Railway backend memory.")
     return assemble(
         (cover_template.content, effective_field_map(TemplateKind.cover.value, cover_template.field_map)),
         (index_template.content, effective_field_map(TemplateKind.index.value, index_template.field_map)),

@@ -372,23 +372,35 @@ The Submitted by dropdown includes:
 - Kinetics Acoustics Technical Services LLC
 - Kinetics Sound and Vibration Control
 
-The selected company controls which approved cover page is used in the final PDF.
+The selected company controls which approved cover, index, and divider templates are used in the final PDF.
 
-## Company-specific cover templates
+## Company-specific templates
 
-The system supports separate cover page templates for each `Submitted by` company.
+The system supports separate cover, index, and divider templates for each `Submitted by` company.
 
-Upload each company cover in Templates as kind `cover`.
+Upload each company template in Templates using the correct kind:
 
-Recommended cover template names:
+- `cover`
+- `index`
+- `divider`
 
-- Kinetics Middle East LLC
-- Kinetics Acoustics Technical Services LLC
-- Kinetics Sound and Vibration Control
+Include the company name in each template name or file name.
 
-When generating a submittal, the backend matches the selected `Submitted by` company to the active cover template name or file name.
+Recommended template names:
 
-Index and divider templates remain shared unless the system is later extended for company-specific index/divider templates.
+- Kinetics Middle East LLC - Cover
+- Kinetics Middle East LLC - Index
+- Kinetics Middle East LLC - Divider
+- Kinetics Acoustics Technical Services LLC - Cover
+- Kinetics Acoustics Technical Services LLC - Index
+- Kinetics Acoustics Technical Services LLC - Divider
+- Kinetics Sound and Vibration Control - Cover
+- Kinetics Sound and Vibration Control - Index
+- Kinetics Sound and Vibration Control - Divider
+
+When generating a submittal, the backend matches the selected `Submitted by` company to the active template name or file name for each template kind.
+
+If only one active template exists for a kind, the system uses it as a fallback.
 
 ## Default index/divider sections
 

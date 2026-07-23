@@ -263,24 +263,28 @@ def normalize_company_key(value: str | None) -> str:
     return "".join(ch for ch in (value or "").lower() if ch.isalnum())
 
 
-def select_cover_template(templates: list[Template], submitted_by: str | None) -> Template:
-    covers = [template for template in templates if template.kind == TemplateKind.cover]
-    if not covers:
-        raise HTTPException(409, "Missing active templates: cover")
-    if len(covers) == 1:
-        return covers[0]
+def company_aliases_for(submitted_by: str | None) -> tuple[str, ...]:
     submitted_key = normalize_company_key(submitted_by)
     company_aliases = {
         "kineticsmiddleeastllc": ("kineticsmiddleeast", "middleeast", "kmellc", "kme"),
         "kineticsacousticstechnicalservicesllc": ("kineticsacousticstechnicalservices", "acousticstechnicalservices", "acoustictechnicalservices", "kats", "ats"),
         "kineticssoundandvibrationcontrol": ("kineticssoundandvibrationcontrol", "soundandvibrationcontrol", "ksvc", "svc"),
     }
-    aliases = company_aliases.get(submitted_key, (submitted_key,))
-    for template in covers:
+    return company_aliases.get(submitted_key, (submitted_key,))
+
+
+def select_company_template(templates: list[Template], kind: TemplateKind, submitted_by: str | None) -> Template:
+    candidates = [template for template in templates if template.kind == kind]
+    if not candidates:
+        raise HTTPException(409, f"Missing active templates: {kind.value}")
+    if len(candidates) == 1:
+        return candidates[0]
+    aliases = company_aliases_for(submitted_by)
+    for template in candidates:
         haystack = normalize_company_key(f"{template.name} {template.file_name}")
         if any(alias and alias in haystack for alias in aliases):
             return template
-    raise HTTPException(409, f"No active cover template matched submitted by: {submitted_by or 'blank'}. Name the cover template with the company name.")
+    raise HTTPException(409, f"No active {kind.value} template matched submitted by: {submitted_by or 'blank'}. Name the {kind.value} template with the company name.")
 
 
 @app.post("/api/v1/submittals/{submittal_id}/attachments", status_code=201)
@@ -327,8 +331,7 @@ def get_submittal_for_user(submittal_id: str, user: User, db: Session) -> Submit
 
 def build_submittal_pdf(item: Submittal, db: Session) -> bytes:
     active_template_list = db.scalars(select(Template).where(Template.is_active.is_(True))).all()
-    active_templates = {t.kind: t for t in active_template_list if t.kind != TemplateKind.cover}
-    missing = [kind.value for kind in (TemplateKind.cover, TemplateKind.index, TemplateKind.divider) if kind == TemplateKind.cover and not any(t.kind == TemplateKind.cover for t in active_template_list) or kind != TemplateKind.cover and kind not in active_templates]
+    missing = [kind.value for kind in (TemplateKind.cover, TemplateKind.index, TemplateKind.divider) if not any(template.kind == kind for template in active_template_list)]
     if missing:
         raise HTTPException(409, f"Missing active templates: {', '.join(missing)}")
     standard = db.scalars(select(Document).where(Document.kind == DocumentKind.standard, Document.is_active.is_(True)).order_by(Document.sequence)).all()
@@ -380,9 +383,9 @@ def build_submittal_pdf(item: Submittal, db: Session) -> bytes:
     for slot, (role, name) in enumerate(((role, name) for role, name in parties if name), 1):
         values[f"party_{slot}_name"] = name or ""
         values[f"party_{slot}_role"] = role
-    cover_template = select_cover_template(active_template_list, item.submitted_by)
-    index_template = active_templates[TemplateKind.index]
-    divider_template = active_templates[TemplateKind.divider]
+    cover_template = select_company_template(active_template_list, TemplateKind.cover, item.submitted_by)
+    index_template = select_company_template(active_template_list, TemplateKind.index, item.submitted_by)
+    divider_template = select_company_template(active_template_list, TemplateKind.divider, item.submitted_by)
     source_bytes = len(cover_template.content) + len(index_template.content) + len(divider_template.content)
     source_bytes += sum(len(entry.content) for section in sections for entry in section.files if isinstance(entry, FileEntry))
     source_mb = source_bytes / 1024 / 1024

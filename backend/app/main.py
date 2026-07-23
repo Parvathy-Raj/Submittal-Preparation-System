@@ -167,7 +167,10 @@ def upload_template(name: str = Form(), kind: TemplateKind = Form(), revision: s
         mapping = json.loads(field_map)
     except json.JSONDecodeError as exc:
         raise HTTPException(400, "field_map must be valid JSON") from exc
-    db.query(Template).filter(Template.kind == kind).update({Template.is_active: False})
+    if kind == TemplateKind.cover:
+        db.query(Template).filter(Template.kind == kind, Template.name == name).update({Template.is_active: False})
+    else:
+        db.query(Template).filter(Template.kind == kind).update({Template.is_active: False})
     item = Template(name=name, kind=kind, revision=revision, field_map=mapping, file_name=file.filename or f"{name}.pdf", sha256=hashlib.sha256(content).hexdigest(), content=content)
     db.add(item); db.commit(); db.refresh(item)
     return item
@@ -257,6 +260,30 @@ def update_submittal(submittal_id: str, payload: SubmittalUpdate, user: User = D
     return item
 
 
+def normalize_company_key(value: str | None) -> str:
+    return "".join(ch for ch in (value or "").lower() if ch.isalnum())
+
+
+def select_cover_template(templates: list[Template], submitted_by: str | None) -> Template:
+    covers = [template for template in templates if template.kind == TemplateKind.cover]
+    if not covers:
+        raise HTTPException(409, "Missing active templates: cover")
+    if len(covers) == 1:
+        return covers[0]
+    submitted_key = normalize_company_key(submitted_by)
+    company_aliases = {
+        "kineticsmiddleeastllc": ("kineticsmiddleeast", "middleeast", "kmellc", "kme"),
+        "kineticsacousticstechnicalservicesllc": ("kineticsacousticstechnicalservices", "acousticstechnicalservices", "acoustictechnicalservices", "kats", "ats"),
+        "kineticssoundandvibrationcontrol": ("kineticssoundandvibrationcontrol", "soundandvibrationcontrol", "ksvc", "svc"),
+    }
+    aliases = company_aliases.get(submitted_key, (submitted_key,))
+    for template in covers:
+        haystack = normalize_company_key(f"{template.name} {template.file_name}")
+        if any(alias and alias in haystack for alias in aliases):
+            return template
+    raise HTTPException(409, f"No active cover template matched submitted by: {submitted_by or 'blank'}. Name the cover template with the company name.")
+
+
 @app.post("/api/v1/submittals/{submittal_id}/attachments", status_code=201)
 def add_attachment(submittal_id: str, name: str = Form(), category: str = Form("Proposed Materials"), sequence: int = Form(1000), file: UploadFile = File(), user: User = Depends(current_user), db: Session = Depends(get_db)):
     try:
@@ -279,8 +306,9 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
         item = None
     if not item or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
         raise HTTPException(404, "Submittal not found")
-    active_templates = {t.kind: t for t in db.scalars(select(Template).where(Template.is_active.is_(True))).all()}
-    missing = [kind.value for kind in TemplateKind if kind not in active_templates]
+    active_template_list = db.scalars(select(Template).where(Template.is_active.is_(True))).all()
+    active_templates = {t.kind: t for t in active_template_list if t.kind != TemplateKind.cover}
+    missing = [kind.value for kind in (TemplateKind.cover, TemplateKind.index, TemplateKind.divider) if kind == TemplateKind.cover and not any(t.kind == TemplateKind.cover for t in active_template_list) or kind != TemplateKind.cover and kind not in active_templates]
     if missing:
         raise HTTPException(409, f"Missing active templates: {', '.join(missing)}")
     standard = db.scalars(select(Document).where(Document.kind == DocumentKind.standard, Document.is_active.is_(True)).order_by(Document.sequence)).all()
@@ -328,7 +356,7 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
         values[f"party_{slot}_name"] = name or ""
         values[f"party_{slot}_role"] = role
     try:
-        cover_template = active_templates[TemplateKind.cover]
+        cover_template = select_cover_template(active_template_list, item.submitted_by)
         index_template = active_templates[TemplateKind.index]
         divider_template = active_templates[TemplateKind.divider]
         item.final_pdf = assemble(

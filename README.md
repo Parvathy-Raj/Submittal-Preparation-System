@@ -27,6 +27,7 @@ Latest updates include:
 - Completed/generated submittals are protected from editing.
 - Product list supports multiple documents per product.
 - Product documents are fetched automatically during submittal generation.
+- Company-specific cover templates are supported.
 - Custom index/divider sections are supported.
 - Index order and divider order can be rearranged before generation.
 - Cover, index, and divider pages use approved templates as the base design.
@@ -271,9 +272,11 @@ Before live users generate submittals:
 
 1. Sign in as system admin/admin.
 2. Upload approved templates:
-   - cover
-   - index
-   - divider
+   - cover for Kinetics Middle East LLC
+   - cover for Kinetics Acoustics Technical Services LLC
+   - cover for Kinetics Sound and Vibration Control
+   - one shared index template
+   - one shared divider template
 3. Upload standard company documents:
    - Company Profile
    - Trade License
@@ -356,7 +359,24 @@ The Submitted by dropdown includes:
 - Kinetics Middle East LLC
 - Kinetics Acoustics Technical Services LLC
 - Kinetics Sound and Vibration Control
-- Kinetics Metal Construction Industries LLC
+
+The selected company controls which approved cover page is used in the final PDF.
+
+## Company-specific cover templates
+
+The system supports separate cover page templates for each `Submitted by` company.
+
+Upload each company cover in Templates as kind `cover`.
+
+Recommended cover template names:
+
+- Kinetics Middle East LLC
+- Kinetics Acoustics Technical Services LLC
+- Kinetics Sound and Vibration Control
+
+When generating a submittal, the backend matches the selected `Submitted by` company to the active cover template name or file name.
+
+Index and divider templates remain shared unless the system is later extended for company-specific index/divider templates.
 
 ## Default index/divider sections
 
@@ -391,7 +411,8 @@ If the package order is rearranged, the index page follows the rearranged order.
 
 ## PDF generation rules
 
-- Approved cover/index/divider templates remain the base design.
+- The selected company's approved cover template remains the base design.
+- Approved index/divider templates remain the base design.
 - Only dynamic text fields are overlaid.
 - Existing PDF documents are not edited.
 - Original PDF quality is preserved.

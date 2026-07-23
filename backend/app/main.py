@@ -277,8 +277,6 @@ def select_company_template(templates: list[Template], kind: TemplateKind, submi
     candidates = [template for template in templates if template.kind == kind]
     if not candidates:
         raise HTTPException(409, f"Missing active templates: {kind.value}")
-    if len(candidates) == 1:
-        return candidates[0]
     aliases = company_aliases_for(submitted_by)
     for template in candidates:
         haystack = normalize_company_key(f"{template.name} {template.file_name}")

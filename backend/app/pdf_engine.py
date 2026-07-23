@@ -1,4 +1,5 @@
 ﻿from dataclasses import dataclass
+import re
 from io import BytesIO
 from typing import Iterable
 from pypdf import PdfReader, PdfWriter
@@ -161,6 +162,42 @@ def _wrapped_lines_that_fit(text: str, font: str, max_size: float, min_size: flo
     return _wrap_text_complete(text, font, min_size, max_width), min_size
 
 
+def _project_name_chunks(text: str) -> list[str]:
+    text = re.sub(r"\s+", " ", str(text).upper()).strip()
+    if not text:
+        return []
+    match = re.match(r"(.+?)\s+ON\s+(PLOT\s+NO\.?\s*[A-Z0-9/+.-]+)\s+AT\s+(.+)", text)
+    if match:
+        prefix, plot, location = match.groups()
+        chunks = [prefix.strip(), f"ON {plot.strip()}"]
+        location_parts = [part.strip() for part in location.split(",") if part.strip()]
+        if location_parts:
+            chunks.append(f"AT {location_parts[0]}")
+            if len(location_parts) == 2:
+                chunks.append(location_parts[1])
+            elif len(location_parts) >= 3:
+                chunks.extend(location_parts[1:-2])
+                chunks.append(f"{location_parts[-2]}, {location_parts[-1]}")
+        return chunks
+    return [text]
+
+
+def _project_lines_that_fit(text: str, font: str, max_size: float, min_size: float, max_width: float, max_lines: int) -> tuple[list[str], float]:
+    chunks = _project_name_chunks(text)
+    size = max_size
+    while size >= min_size:
+        lines: list[str] = []
+        for chunk in chunks:
+            lines.extend(_wrap_text_complete(chunk, font, size, max_width))
+        if lines and len(lines) <= max_lines and all(stringWidth(line, font, size) <= max_width for line in lines):
+            return lines, size
+        size -= 0.5
+    lines = []
+    for chunk in chunks:
+        lines.extend(_wrap_text_complete(chunk, font, min_size, max_width))
+    return lines, min_size
+
+
 def _draw_centered_lines(pdf: canvas.Canvas, x: float, y: float, lines: list[str], font: str, size: float, color: str, line_height: float) -> float:
     pdf.setFillColor(HexColor(color))
     pdf.setFont(font, size)
@@ -184,7 +221,8 @@ def _draw_cover_auto(pdf: canvas.Canvas, values: dict[str, str], spec: dict) -> 
     _draw_centered_lines(pdf, x, 656, heading_lines, title_font, heading_size, "#0B2A64", heading_size + 4)
 
     project = str(values.get("project_name", "")).upper()
-    project_lines, project_size = _wrapped_lines_that_fit(project, body_font, 48, 20, max_width, 6)
+    project_max_size = 48 if len(project) <= 45 else 38 if len(project) <= 90 else 32
+    project_lines, project_size = _project_lines_that_fit(project, body_font, project_max_size, 18, max_width, 7)
     project_line_height = project_size + 5
     project_top = 575
     project_bottom = _draw_centered_lines(pdf, x, project_top, project_lines, body_font, project_size, "#FF0000", project_line_height)

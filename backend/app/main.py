@@ -310,7 +310,7 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
     if missing:
         raise HTTPException(409, f"Missing active templates: {', '.join(missing)}")
     standard = db.scalars(select(Document).where(Document.kind == DocumentKind.standard, Document.is_active.is_(True)).order_by(Document.sequence)).all()
-    default_section_order = ["Company Profile", "Trade License", "Proposed Materials", "Product Catalogues", "Test Reports", "Country of Origin", "Draft Warranty Certificate", "List of Previous Projects", "Previous Approvals"]
+    default_section_order = ["Company Profile", "Trade License", "Proposed Materials", "General Compliance Statement", "Product Catalogues", "Test Reports", "Country of Origin", "Draft Warranty Certificate", "List of Previous Projects", "Previous Approvals"]
     configured_sections = [str(name).strip() for name in (item.section_order or []) if str(name).strip()]
     product_documents = [doc for product in item.products for doc in product.documents if doc.is_active]
     document_sections = [doc.category.strip() for doc in [*standard, *product_documents] if doc.category and doc.category.strip() and doc.category.strip() not in [*default_section_order, "Compliance", "General", "Product Document"]]
@@ -333,7 +333,7 @@ def generate_submittal(submittal_id: str, user: User = Depends(current_user), db
             return "Proposed Materials"
         if category and category not in {"General", "Product Document"}:
             return category
-        rules = (("company profile", "Company Profile"), ("trade license", "Trade License"), ("proposed material", "Proposed Materials"), ("compliance", "Proposed Materials"), ("datasheet", "Product Catalogues"), ("data sheet", "Product Catalogues"), ("catalog", "Product Catalogues"), ("test", "Test Reports"), ("country of origin", "Country of Origin"), ("warranty", "Draft Warranty Certificate"), ("list of project", "List of Previous Projects"), ("project list", "List of Previous Projects"), ("previous project", "List of Previous Projects"), ("approval", "Previous Approvals"))
+        rules = (("company profile", "Company Profile"), ("trade license", "Trade License"), ("proposed material", "Proposed Materials"), ("general compliance statement", "General Compliance Statement"), ("compliance statement", "General Compliance Statement"), ("compliance", "Proposed Materials"), ("datasheet", "Product Catalogues"), ("data sheet", "Product Catalogues"), ("catalog", "Product Catalogues"), ("test", "Test Reports"), ("country of origin", "Country of Origin"), ("warranty", "Draft Warranty Certificate"), ("list of project", "List of Previous Projects"), ("project list", "List of Previous Projects"), ("previous project", "List of Previous Projects"), ("approval", "Previous Approvals"))
         return next((section for needle, section in rules if needle in combined), "Proposed Materials")
     def add_document(doc: Document) -> None:
         nonlocal insertion_order

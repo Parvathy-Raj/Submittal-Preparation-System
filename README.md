@@ -397,12 +397,13 @@ Default sections:
 1. Company Profile
 2. Trade License
 3. Proposed Materials
-4. Product Catalogues
-5. Test Reports
-6. Country of Origin
-7. Draft Warranty Certificate
-8. List of Previous Projects
-9. Previous Approvals
+4. General Compliance Statement
+5. Product Catalogues
+6. Test Reports
+7. Country of Origin
+8. Draft Warranty Certificate
+9. List of Previous Projects
+10. Previous Approvals
 
 Users can also add custom sections for client-specific requirements.
 

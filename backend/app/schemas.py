@@ -82,6 +82,14 @@ class TemplateOut(ORMModel):
     is_active: bool
 
 
+class SubmittalAttachmentOut(ORMModel):
+    id: uuid.UUID
+    name: str
+    category: str
+    sequence: int
+    sha256: str
+
+
 class SubmittalCreate(BaseModel):
     number: str
     revision: str = "0"
@@ -124,6 +132,7 @@ class SubmittalOut(ORMModel):
     error_message: str | None
     final_sha256: str | None
     products: list[ProductOut]
+    attachments: list[SubmittalAttachmentOut] = []
     created_by: UserOut
     created_at: datetime
     generated_at: datetime | None

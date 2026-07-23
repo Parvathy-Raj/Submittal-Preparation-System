@@ -1068,6 +1068,15 @@ input:focus,select:focus,textarea:focus{
   color:#b42318;
 }
 
+.saved-file-tag{
+  color:#1d5fd1!important;
+  font-weight:800;
+  background:#eaf2ff;
+  border-radius:999px;
+  padding:5px 10px;
+  width:max-content;
+}
+
 @media(max-width:1100px){
   .overview-cards,
   .dashboard-chart-grid{

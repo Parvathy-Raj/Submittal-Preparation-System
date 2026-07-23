@@ -1077,6 +1077,21 @@ input:focus,select:focus,textarea:focus{
   width:max-content;
 }
 
+.recent-panel .table .tr{
+  grid-template-columns:1fr 1.45fr 1.35fr .75fr 120px;
+}
+
+.drilldown-panel .table .tr{
+  grid-template-columns:1fr 1.9fr .75fr .75fr 120px;
+}
+
+.product-name-cell{
+  color:#334155;
+  font-size:13px;
+  line-height:1.45;
+  white-space:normal;
+}
+
 @media(max-width:1100px){
   .overview-cards,
   .dashboard-chart-grid{

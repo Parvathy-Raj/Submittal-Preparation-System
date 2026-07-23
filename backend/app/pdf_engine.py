@@ -132,15 +132,33 @@ def _wrap_text(text: str, font: str, size: float, max_width: float, max_lines: i
     return lines
 
 
+def _wrap_text_complete(text: str, font: str, size: float, max_width: float) -> list[str]:
+    words = str(text).split()
+    if not words:
+        return []
+    lines: list[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if not current or stringWidth(candidate, font, size) <= max_width:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
 def _wrapped_lines_that_fit(text: str, font: str, max_size: float, min_size: float, max_width: float, max_lines: int) -> tuple[list[str], float]:
     text = str(text).upper().strip()
     size = max_size
     while size >= min_size:
-        lines = _wrap_text(text, font, size, max_width, max_lines)
+        lines = _wrap_text_complete(text, font, size, max_width)
         if lines and len(lines) <= max_lines and all(stringWidth(line, font, size) <= max_width for line in lines):
             return lines, size
         size -= 0.5
-    return _wrap_text(text, font, min_size, max_width, max_lines), min_size
+    return _wrap_text_complete(text, font, min_size, max_width), min_size
 
 
 def _draw_centered_lines(pdf: canvas.Canvas, x: float, y: float, lines: list[str], font: str, size: float, color: str, line_height: float) -> float:
@@ -166,8 +184,8 @@ def _draw_cover_auto(pdf: canvas.Canvas, values: dict[str, str], spec: dict) -> 
     _draw_centered_lines(pdf, x, 656, heading_lines, title_font, heading_size, "#0B2A64", heading_size + 4)
 
     project = str(values.get("project_name", "")).upper()
-    project_lines, project_size = _wrapped_lines_that_fit(project, body_font, 48, 30, max_width, 3)
-    project_line_height = project_size + 7
+    project_lines, project_size = _wrapped_lines_that_fit(project, body_font, 48, 20, max_width, 6)
+    project_line_height = project_size + 5
     project_top = 575
     project_bottom = _draw_centered_lines(pdf, x, project_top, project_lines, body_font, project_size, "#FF0000", project_line_height)
 

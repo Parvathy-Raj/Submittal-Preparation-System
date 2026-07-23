@@ -41,20 +41,7 @@ def default_field_map(kind: str) -> dict:
             "__masks__": [
                 {"page": 0, "x": 72, "y": 95, "width": 470, "height": 610, "color": "#FFFFFF"},
             ],
-            "cover_heading": {"page": 0, "x": 306, "y": 660, "font": "Impact", "font_size": 22, "max_width": 470, "align": "center", "color": "#0B2A64", "uppercase": True},
-            "project_name": {"page": 0, "x": 306, "y": 582, "font": "Impact", "font_size": 54, "max_width": 455, "align": "center", "color": "#FF0000", "uppercase": True, "wrap": True, "line_height": 58, "max_lines": 3},
-            "party_1_name": {"page": 0, "x": 306, "y": 405, "font": "Impact", "font_size": 24, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 25, "max_lines": 2},
-            "party_1_role": {"page": 0, "x": 306, "y": 377, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
-            "party_2_name": {"page": 0, "x": 306, "y": 342, "font": "Impact", "font_size": 24, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 25, "max_lines": 2},
-            "party_2_role": {"page": 0, "x": 306, "y": 314, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
-            "party_3_name": {"page": 0, "x": 306, "y": 279, "font": "Impact", "font_size": 23, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 24, "max_lines": 2},
-            "party_3_role": {"page": 0, "x": 306, "y": 251, "font": "Helvetica-Bold", "font_size": 12, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
-            "party_4_name": {"page": 0, "x": 306, "y": 234, "font": "Impact", "font_size": 20, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 21, "max_lines": 2},
-            "party_4_role": {"page": 0, "x": 306, "y": 209, "font": "Helvetica-Bold", "font_size": 10, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
-            "submitted_by_label": {"page": 0, "x": 306, "y": 184, "literal": "SUBMITTED BY:", "font": "Helvetica-Oblique", "font_size": 11, "align": "center", "color": "#0057B8", "underline": True},
-            "submitted_by": {"page": 0, "x": 306, "y": 154, "font": "Impact", "font_size": 23, "max_width": 455, "align": "center", "color": "#3B3B3B", "uppercase": True, "wrap": True, "line_height": 24, "max_lines": 2},
-            "submitted_by_role": {"page": 0, "x": 306, "y": 132, "font": "Helvetica-Bold", "font_size": 11, "max_width": 455, "align": "center", "color": "#000000", "uppercase": True},
-            "footer_reference": {"page": 0, "x": 306, "y": 96, "font": "Helvetica", "font_size": 11, "max_width": 420, "align": "center", "color": "#0057B8", "uppercase": True},
+            "__cover_auto__": {"page": 0, "x": 306, "max_width": 455},
         }
     if kind == "index":
         return {
@@ -145,6 +132,113 @@ def _wrap_text(text: str, font: str, size: float, max_width: float, max_lines: i
     return lines
 
 
+def _wrapped_lines_that_fit(text: str, font: str, max_size: float, min_size: float, max_width: float, max_lines: int) -> tuple[list[str], float]:
+    text = str(text).upper().strip()
+    size = max_size
+    while size >= min_size:
+        lines = _wrap_text(text, font, size, max_width, max_lines)
+        if lines and len(lines) <= max_lines and all(stringWidth(line, font, size) <= max_width for line in lines):
+            return lines, size
+        size -= 0.5
+    return _wrap_text(text, font, min_size, max_width, max_lines), min_size
+
+
+def _draw_centered_lines(pdf: canvas.Canvas, x: float, y: float, lines: list[str], font: str, size: float, color: str, line_height: float) -> float:
+    pdf.setFillColor(HexColor(color))
+    pdf.setFont(font, size)
+    current_y = y
+    for line in lines:
+        pdf.drawCentredString(x, current_y, line)
+        current_y -= line_height
+    return current_y
+
+
+def _draw_cover_auto(pdf: canvas.Canvas, values: dict[str, str], spec: dict) -> None:
+    x = float(spec.get("x", 306))
+    max_width = float(spec.get("max_width", 455))
+    title_font = _available_font("Impact")
+    body_font = _available_font("Impact")
+    role_font = _available_font("Helvetica-Bold")
+    small_font = _available_font("Helvetica")
+
+    heading = str(values.get("cover_heading") or f"MATERIAL SUBMITTAL FOR {values.get('material_description', '')}").upper()
+    heading_lines, heading_size = _wrapped_lines_that_fit(heading, title_font, 20, 13, max_width, 2)
+    _draw_centered_lines(pdf, x, 656, heading_lines, title_font, heading_size, "#0B2A64", heading_size + 4)
+
+    project = str(values.get("project_name", "")).upper()
+    project_lines, project_size = _wrapped_lines_that_fit(project, body_font, 48, 30, max_width, 3)
+    project_line_height = project_size + 7
+    project_top = 575
+    project_bottom = _draw_centered_lines(pdf, x, project_top, project_lines, body_font, project_size, "#FF0000", project_line_height)
+
+    parties = []
+    for index in range(1, 5):
+        name = str(values.get(f"party_{index}_name", "")).strip()
+        role = str(values.get(f"party_{index}_role", "")).strip()
+        if name:
+            parties.append((name.upper(), role.upper()))
+
+    submitted_name = str(values.get("submitted_by", "")).upper().strip()
+    submitted_role = str(values.get("submitted_by_role", "")).upper().strip()
+    submitted_lines, submitted_size = _wrapped_lines_that_fit(submitted_name, body_font, 20, 14, max_width, 2)
+    submitted_line_height = submitted_size + 4
+    submitted_block_height = 16 + 8 + len(submitted_lines) * submitted_line_height + 18 + 30
+    submitted_top = 178
+    party_bottom_limit = submitted_top + submitted_block_height - 12
+    party_top = min(project_bottom - 28, 420)
+    available_party_height = max(95, party_top - party_bottom_limit)
+
+    selected_party_size = 22
+    selected_blocks: list[tuple[list[str], float, str]] = []
+    for size in [22, 21, 20, 19, 18, 17, 16, 15, 14]:
+        blocks = []
+        total_height = 0.0
+        for name, role in parties:
+            lines = _wrap_text(name, body_font, size, max_width, 2)
+            line_height = size + 4
+            block_height = len(lines) * line_height + 12 + 13
+            blocks.append((lines, line_height, role))
+            total_height += block_height
+        if parties:
+            total_height += max(0, len(parties) - 1) * 6
+        if total_height <= available_party_height or size == 14:
+            selected_party_size = size
+            selected_blocks = blocks
+            break
+
+    current_y = party_top
+    for lines, line_height, role in selected_blocks:
+        current_y = _draw_centered_lines(pdf, x, current_y, lines, body_font, selected_party_size, "#3B3B3B", line_height)
+        role_y = current_y + 1
+        pdf.setFillColor(HexColor("#000000"))
+        pdf.setFont(role_font, 9.5)
+        pdf.drawCentredString(x, role_y, role)
+        current_y = role_y - 22
+
+    label_y = min(178, current_y - 2) if parties else 185
+    label_y = max(label_y, 152)
+    label = "SUBMITTED BY:"
+    pdf.setFillColor(HexColor("#0057B8"))
+    pdf.setFont(_available_font("Helvetica-Oblique"), 10)
+    pdf.drawCentredString(x, label_y, label)
+    label_width = stringWidth(label, _available_font("Helvetica-Oblique"), 10)
+    pdf.setLineWidth(0.6)
+    pdf.line(x - label_width / 2, label_y - 2, x + label_width / 2, label_y - 2)
+
+    submitted_name_top = label_y - 28
+    submitted_bottom = _draw_centered_lines(pdf, x, submitted_name_top, submitted_lines, body_font, submitted_size, "#3B3B3B", submitted_line_height)
+    if submitted_role:
+        pdf.setFillColor(HexColor("#000000"))
+        pdf.setFont(role_font, 10)
+        pdf.drawCentredString(x, submitted_bottom - 1, submitted_role)
+
+    footer = str(values.get("footer_reference", "")).upper()
+    footer, footer_size = _fit_text(footer, small_font, 10, max_width)
+    pdf.setFillColor(HexColor("#0057B8"))
+    pdf.setFont(small_font, footer_size)
+    pdf.drawCentredString(x, 96, footer)
+
+
 def _page_count(content: bytes) -> int:
     reader = PdfReader(BytesIO(content))
     if reader.is_encrypted and reader.decrypt("") == 0:
@@ -169,6 +263,9 @@ def _overlay(template: bytes, values: dict[str, str], field_map: dict) -> bytes:
             if int(mask.get("page", 0)) == page_index:
                 pdf.setFillColor(HexColor(mask.get("color", "#FFFFFF")))
                 pdf.rect(float(mask["x"]), float(mask["y"]), float(mask["width"]), float(mask["height"]), stroke=0, fill=1)
+        cover_auto = field_map.get("__cover_auto__")
+        if cover_auto is not None and int(cover_auto.get("page", 0)) == page_index:
+            _draw_cover_auto(pdf, values, cover_auto)
         for field, spec in field_map.items():
             if field.startswith("__") or int(spec.get("page", 0)) != page_index:
                 continue
@@ -188,7 +285,7 @@ def _overlay(template: bytes, values: dict[str, str], field_map: dict) -> bytes:
             if spec.get("wrap") and max_width:
                 lines = _wrap_text(text, font, size, max_width, int(spec.get("max_lines", 2)))
                 line_height = float(spec.get("line_height", size * 1.15))
-                start_y = y - (line_height * (len(lines) - 1) / 2)
+                start_y = y
                 for line_index, line in enumerate(lines):
                     line_y = start_y - line_height * line_index
                     if spec.get("align") == "center":

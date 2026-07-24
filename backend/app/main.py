@@ -224,8 +224,6 @@ def update_product(product_id: uuid.UUID, payload: ProductUpdate, _: User = Depe
 @app.get("/api/v1/submittals", response_model=list[SubmittalOut])
 def list_submittals(user: User = Depends(current_user), db: Session = Depends(get_db)):
     query = select(Submittal).order_by(Submittal.created_at.desc())
-    if user.role not in {Role.admin, Role.system_admin}:
-        query = query.where(Submittal.created_by_id == user.id)
     return db.scalars(query).unique().all()
 
 

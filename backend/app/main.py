@@ -408,12 +408,12 @@ def preview_submittal(submittal_id: str, user: User = Depends(current_user), db:
 
 
 @app.delete("/api/v1/submittals/{submittal_id}", status_code=204)
-def delete_submittal(submittal_id: str, _: User = Depends(admin_only), db: Session = Depends(get_db)):
+def delete_submittal(submittal_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     try:
         item = db.get(Submittal, uuid.UUID(submittal_id))
     except ValueError:
         item = None
-    if not item:
+    if not item or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
         raise HTTPException(404, "Submittal not found")
     db.delete(item)
     db.commit()
@@ -426,7 +426,7 @@ def download(submittal_id: str, user: User = Depends(current_user), db: Session 
         item = db.get(Submittal, uuid.UUID(submittal_id))
     except ValueError:
         item = None
-    if not item or not item.final_pdf or (user.role not in {Role.admin, Role.system_admin} and item.created_by_id != user.id):
+    if not item or not item.final_pdf:
         raise HTTPException(404, "Generated submittal not found")
     filename = f"{item.number}-R{item.revision}.pdf".replace("/", "-")
     return StreamingResponse(BytesIO(item.final_pdf), media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"', "ETag": item.final_sha256 or ""})

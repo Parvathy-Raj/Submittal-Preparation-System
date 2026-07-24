@@ -996,7 +996,7 @@ input:focus,select:focus,textarea:focus{
 }
 
 .form{
-  max-width:1180px;
+  max-width:none;
   margin:0 auto;
   overflow:hidden;
 }

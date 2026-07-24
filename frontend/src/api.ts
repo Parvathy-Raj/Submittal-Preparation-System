@@ -5,7 +5,7 @@ export type Product = {id:string; code:string; name:string; description?:string;
 export type Doc = {id:string; name:string; kind:string; category:string; revision:string; sequence:number; file_name:string};
 export type Template = {id:string; name:string; kind:string; revision:string; field_map:Record<string,unknown>; file_name:string};
 export type SubmittalAttachment = {id:string; name:string; category:string; sequence:number; sha256:string};
-export type Submittal = {id:string; number:string; revision:string; project_name:string; material_description:string; document_order:(string|null)[]; section_order:string[]; project_number?:string; client?:string; consultant?:string; main_contractor?:string; subcontractor?:string; submitted_by?:string; submitted_by_role?:string; submission_date:string; status:string; error_message?:string; final_sha256?:string; products:Product[]; attachments:SubmittalAttachment[]; created_by?:User; created_at:string; generated_at?:string};
+export type Submittal = {id:string; number:string; revision:string; project_name:string; material_description:string; document_order:(string|null)[]; section_order:string[]; project_number?:string; client?:string; client_title?:string; consultant?:string; consultant_title?:string; main_contractor?:string; main_contractor_title?:string; subcontractor?:string; subcontractor_title?:string; submitted_by?:string; submitted_by_role?:string; submission_date:string; status:string; error_message?:string; final_sha256?:string; products:Product[]; attachments:SubmittalAttachment[]; created_by?:User; created_at:string; generated_at?:string};
 
 class Api {
   token = localStorage.getItem("token");

@@ -97,9 +97,13 @@ class SubmittalCreate(BaseModel):
     material_description: str = "Acoustic Treatment"
     project_number: str | None = None
     client: str | None = None
+    client_title: str | None = "CLIENT"
     consultant: str | None = None
+    consultant_title: str | None = "CONSULTANT"
     main_contractor: str | None = None
+    main_contractor_title: str | None = "MAIN CONTRACTOR"
     subcontractor: str | None = None
+    subcontractor_title: str | None = "SUB CONTRACTOR"
     submitted_by: str | None = None
     submitted_by_role: str | None = None
     submission_date: date = Field(default_factory=date.today)
@@ -122,9 +126,13 @@ class SubmittalOut(ORMModel):
     section_order: list[str]
     project_number: str | None
     client: str | None
+    client_title: str | None
     consultant: str | None
+    consultant_title: str | None
     main_contractor: str | None
+    main_contractor_title: str | None
     subcontractor: str | None
+    subcontractor_title: str | None
     submitted_by: str | None
     submitted_by_role: str | None
     submission_date: date

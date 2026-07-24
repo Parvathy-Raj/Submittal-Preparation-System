@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     with engine.begin() as connection:
         connection.execute(text("ALTER TYPE role ADD VALUE IF NOT EXISTS 'system_admin'"))
     with engine.begin() as connection:
-        for column, sql_type in (("main_contractor", "VARCHAR(255)"), ("subcontractor", "VARCHAR(255)"), ("submitted_by", "VARCHAR(255)"), ("submitted_by_role", "VARCHAR(160)")):
+        for column, sql_type in (("main_contractor", "VARCHAR(255)"), ("subcontractor", "VARCHAR(255)"), ("submitted_by", "VARCHAR(255)"), ("submitted_by_role", "VARCHAR(160)"), ("client_title", "VARCHAR(120) DEFAULT 'CLIENT'"), ("consultant_title", "VARCHAR(120) DEFAULT 'CONSULTANT'"), ("main_contractor_title", "VARCHAR(120) DEFAULT 'MAIN CONTRACTOR'"), ("subcontractor_title", "VARCHAR(120) DEFAULT 'SUB CONTRACTOR'")):
             connection.execute(text(f"ALTER TABLE submittals ADD COLUMN IF NOT EXISTS {column} {sql_type}"))
         connection.execute(text("ALTER TABLE submittal_attachments ADD COLUMN IF NOT EXISTS category VARCHAR(120) DEFAULT 'Proposed Materials'"))
         connection.execute(text("ALTER TABLE submittals ADD COLUMN IF NOT EXISTS material_description VARCHAR(255) DEFAULT 'Acoustic Treatment'"))
@@ -377,7 +377,7 @@ def build_submittal_pdf(item: Submittal, db: Session) -> bytes:
         insertion_order += 1
     sections = [Section(name, [entry for _, _, entry in sorted(grouped[name])]) for name in section_order if grouped[name]]
     values = {"project_name": item.project_name, "material_description": item.material_description, "cover_heading": f"MATERIAL SUBMITTAL FOR {item.material_description}", "cover_material_line": f"FOR {item.material_description.upper()}", "project_number": item.project_number or "", "client": item.client or "", "consultant": item.consultant or "", "main_contractor": item.main_contractor or "", "subcontractor": item.subcontractor or "", "submitted_by": item.submitted_by or "", "submitted_by_role": item.submitted_by_role or "", "submittal_number": item.number, "revision": item.revision, "submission_date": item.submission_date.isoformat(), "footer_reference": f"DATE: {item.submission_date.strftime('%d-%b-%Y').upper()} | {item.number}-R{item.revision}", "product_details": ", ".join(p.name for p in item.products)}
-    parties = [("CLIENT", item.client), ("CONSULTANT", item.consultant), ("MAIN CONTRACTOR", item.main_contractor), ("SUB CONTRACTOR", item.subcontractor)]
+    parties = [(item.client_title or "CLIENT", item.client), (item.consultant_title or "CONSULTANT", item.consultant), (item.main_contractor_title or "MAIN CONTRACTOR", item.main_contractor), (item.subcontractor_title or "SUB CONTRACTOR", item.subcontractor)]
     for slot, (role, name) in enumerate(((role, name) for role, name in parties if name), 1):
         values[f"party_{slot}_name"] = name or ""
         values[f"party_{slot}_role"] = role

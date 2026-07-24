@@ -995,12 +995,20 @@ input:focus,select:focus,textarea:focus{
   padding:20px;
 }
 
-.submittal-form-grid{
+.submittal-number-row{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:18px;
 }
 
+.submittal-form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+  margin-top:18px;
+}
+
+.submittal-number-row label,
 .submittal-form-grid label{
   display:flex;
   flex-direction:column;
@@ -1011,22 +1019,17 @@ input:focus,select:focus,textarea:focus{
   text-transform:capitalize;
 }
 
+.submittal-number-row input,
+.submittal-number-row select,
 .submittal-form-grid input,
 .submittal-form-grid select{
   width:100%;
 }
 
-.submittal-form-grid .wide-field{
-  grid-column:span 3;
-}
-
 @media (max-width:900px){
+  .submittal-number-row,
   .submittal-form-grid{
     grid-template-columns:1fr;
-  }
-
-  .submittal-form-grid .wide-field{
-    grid-column:span 1;
   }
 }
 

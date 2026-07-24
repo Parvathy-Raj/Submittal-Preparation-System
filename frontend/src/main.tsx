@@ -112,12 +112,14 @@ function NewSubmittal({products,docs,draft,registerDraftGuard,done}:{products:Pr
   async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setError("");try{const sub=await persistDraft();await api.request(`/submittals/${sub.id}/generate`,{method:"POST"});registerDraftGuard(false,null);done()}catch(err){setError((err as Error).message)}finally{setBusy(false)}}
   return <form className="panel form" onSubmit={submit}>
     <div className="panel-title"><div><h2>{draft?"Edit submittal":"Project information"}</h2><p>{draft?"Review and update the saved submittal, then generate the revised final PDF.":"Enter the material exactly as it should appear after Material Submittal For. Complete only the parties that apply."}</p></div></div>
-    <div className="submittal-form-grid">
+    <div className="submittal-number-row">
       <label>Number<input required value={data.number} onChange={e=>setData({...data,number:e.target.value})}/></label>
       <label>Revision<input value={data.revision} onChange={e=>setData({...data,revision:e.target.value})}/></label>
       <label>Project Number<input value={data.project_number} onChange={e=>setData({...data,project_number:e.target.value})}/></label>
-      <label className="wide-field">Project Name<input required value={data.project_name} onChange={e=>setData({...data,project_name:e.target.value})}/></label>
-      <label className="wide-field">Material / Submittal For<input list="material-options" required value={data.material_description} onChange={e=>setData({...data,material_description:e.target.value})}/><datalist id="material-options">{materialOptions.map(option=><option key={option} value={option}/>)}</datalist></label>
+    </div>
+    <div className="submittal-form-grid">
+      <label>Project Name<input required value={data.project_name} onChange={e=>setData({...data,project_name:e.target.value})}/></label>
+      <label>Material / Submittal For<input list="material-options" required value={data.material_description} onChange={e=>setData({...data,material_description:e.target.value})}/><datalist id="material-options">{materialOptions.map(option=><option key={option} value={option}/>)}</datalist></label>
       <label>Client<input value={data.client} onChange={e=>setData({...data,client:e.target.value})}/></label>
       <label>Client Title<input value={data.client_title} onChange={e=>setData({...data,client_title:e.target.value})}/></label>
       <label>Consultant<input value={data.consultant} onChange={e=>setData({...data,consultant:e.target.value})}/></label>

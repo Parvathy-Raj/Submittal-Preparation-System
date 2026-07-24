@@ -6,12 +6,13 @@ The application acts like a digital document controller. Users enter project inf
 
 ## Latest version
 
-Version date: 08 July 2026
+Version date: 24 July 2026
 
 Latest updates include:
 
 - Clean blue/white Kinetics-themed interface.
-- Simplified Overview dashboard.
+- Cleaner New Submittal form layout.
+- Overview dashboard is available to admin, system admin, and user profiles.
 - Main dashboard charts:
   - Submittals by employee
   - Submittals by status
@@ -20,18 +21,24 @@ Latest updates include:
   - click an employee to view their submittals
   - click a status to view matching submittals
 - Save Draft workflow in New Submittal.
+- Preview PDF workflow before final generation.
 - Warning popup when leaving an unfinished submittal.
 - Draft/In progress submittals can be reopened and continued.
-- Generated submittals can be downloaded.
+- Generated submittals can be downloaded by any signed-in user.
 - Draft and failed submittals can be edited.
-- Completed/generated submittals can be reopened for customer comment revisions.
+- Completed/generated submittals can be reopened by the owner/admin for customer comment revisions.
+- Users can edit/delete their own submittals.
+- Admins/system admins can edit/delete all submittals.
 - Product list supports multiple documents per product.
 - Product documents are fetched automatically during submittal generation.
 - Product documents can use fixed or custom index/document types.
-- Company-specific cover templates are supported.
+- Company-specific cover, index, and divider templates are supported.
+- Material/submittal title uses a dropdown with custom typing support.
+- Client/consultant/contractor title labels can be customized per submittal.
 - Custom index/divider sections are supported.
 - Index order and divider order can be rearranged before generation.
 - Cover, index, and divider pages use approved templates as the base design.
+- Cover page text uses auto-layout for long project names and dynamic fields.
 - Existing PDF documents remain unchanged.
 
 ## Technology stack
@@ -132,6 +139,7 @@ Admin can:
 
 User can:
 
+- View the full overview dashboard and analytics.
 - View available products.
 - Create submittals.
 - Select products.
@@ -139,7 +147,9 @@ User can:
 - Add custom index sections.
 - Rearrange package order.
 - Save drafts.
-- Generate/download PDFs.
+- Generate PDFs.
+- Download any generated submittal.
+- Edit/delete their own submittals.
 
 User cannot:
 
@@ -147,6 +157,7 @@ User cannot:
 - Upload templates.
 - Manage controlled documents.
 - Create/edit products.
+- Edit/delete other users' submittals.
 
 ## Local setup
 
@@ -171,6 +182,7 @@ JWT_SECRET=replace-with-a-long-random-secret
 BOOTSTRAP_ADMIN_EMAIL=admin@example.com
 BOOTSTRAP_ADMIN_PASSWORD=ChangeMe123!
 MAX_UPLOAD_MB=100
+MAX_PACKAGE_SOURCE_MB=60
 VITE_API_URL=http://localhost:8000/api/v1
 ```
 
@@ -224,6 +236,7 @@ BOOTSTRAP_ADMIN_EMAIL=<admin-email>
 BOOTSTRAP_ADMIN_PASSWORD=<temporary-admin-password>
 JWT_MINUTES=480
 MAX_UPLOAD_MB=100
+MAX_PACKAGE_SOURCE_MB=60
 CORS_ORIGINS=http://localhost:8080,https://your-frontend-domain.up.railway.app
 CORS_ORIGIN_REGEX=https://.*\.railway\.app
 ```
@@ -273,11 +286,10 @@ Before live users generate submittals:
 
 1. Sign in as system admin/admin.
 2. Upload approved templates:
-   - cover for Kinetics Middle East LLC
-   - cover for Kinetics Acoustics Technical Services LLC
-   - cover for Kinetics Sound and Vibration Control
-   - one shared index template
-   - one shared divider template
+   - cover, index, and divider for Kinetics Middle East LLC
+   - cover, index, and divider for Kinetics Acoustics Technical Services LLC
+   - cover, index, and divider for Kinetics Sound and Vibration Control
+   - include the company name in each template name/file name
 3. Upload standard company documents:
    - Company Profile
    - Trade License
@@ -325,22 +337,56 @@ During submittal generation, selected products automatically bring their mapped 
 6. Open `INDEX`.
 7. Rearrange divider/index order if required.
 8. Rearrange documents inside each divider if required.
-9. Save as draft or generate final PDF.
+9. Save as draft, preview the PDF, or generate final PDF.
 
 Project information includes:
 
 - Submittal number
 - Revision
 - Project name
-- Material/submittal title
+- Material/submittal title selected from a dropdown or typed manually
 - Project number
 - Client
+- Client title
 - Consultant
+- Consultant title
 - Main contractor
+- Main contractor title
 - Subcontractor
+- Subcontractor title
 - Submitted by
 - Submitted by role
 - Submission date
+
+Default party titles are:
+
+- CLIENT
+- CONSULTANT
+- MAIN CONTRACTOR
+- SUB CONTRACTOR
+
+These can be changed per submittal when a client requires different wording.
+
+Standard material/submittal options include:
+
+- ACOUSTIC TREATMENT
+- ACOUSTIC LAGGING
+- ACOUSTIC LOUVERS
+- ACOUSTIC UNDERLAY
+- FLOATING FLOOR SYSTEM
+- DIELECTRIC UNIONS
+- DISMANTLING JOINTS
+- ENGINEERING SERVICES
+- FLEXIBLE HOSE CONNECTORS
+- INERTIA BASES
+- RUBBER FLEXIBLE CONNECTORS
+- SEISMIC RESTRAINTS
+- SOUND ATTENUATORS
+- ST. STEEL EXPANSION JOINTS
+- ST. STEEL FLEXIBLE CONNECTORS
+- VIBRATION ISOLATORS
+
+Users can type a custom value if the required material/submittal title is not in the list.
 
 ## Save draft workflow
 
@@ -363,6 +409,20 @@ Drafts preserve:
 - uploaded project attachments saved before leaving
 
 Generated submittals can also be reopened with `Edit`. After changes are saved, the submittal moves back to draft/in-progress until the revised PDF is generated again.
+
+## Preview PDF workflow
+
+New Submittal includes a `Preview PDF` button.
+
+Preview PDF:
+
+- saves the current package as a draft first
+- opens a preview PDF in a new browser tab
+- uses the same assembly engine as final generation
+- does not mark the submittal as generated
+- allows users to review cover, index, divider order, and attached documents before final generation
+
+After previewing, users can continue editing or click generate to create the final PDF.
 
 ## Submitted by options
 
@@ -400,7 +460,7 @@ Recommended template names:
 
 When generating a submittal, the backend matches the selected `Submitted by` company to the active template name or file name for each template kind.
 
-If only one active template exists for a kind, the system uses it as a fallback.
+The match is strict. If the selected company does not have a matching active cover, index, or divider template, generation/preview stops with a clear template-matching error.
 
 ## Default index/divider sections
 
@@ -437,8 +497,9 @@ If the package order is rearranged, the index page follows the rearranged order.
 ## PDF generation rules
 
 - The selected company's approved cover template remains the base design.
-- Approved index/divider templates remain the base design.
+- The selected company's approved index/divider templates remain the base design.
 - Only dynamic text fields are overlaid.
+- Cover text is auto-laid out to reduce overlap and improve long project-name readability.
 - Existing PDF documents are not edited.
 - Original PDF quality is preserved.
 - Original page sizes are preserved.
@@ -477,7 +538,7 @@ Templates may also use `__masks__` to cover old/sample template text before draw
 
 ## Overview dashboard
 
-Admins and system admins see the full dashboard.
+System admins, admins, and users see the overview dashboard.
 
 The dashboard includes:
 
@@ -491,7 +552,12 @@ The dashboard includes:
 
 Clicking a chart bar shows the matching submittals below the charts.
 
-Generated submittals can be downloaded from the drill-down list. Draft/failed submittals can be edited.
+Dashboard permissions:
+
+- Admin/system admin can edit, delete, and download all submittals.
+- Users can edit/delete their own submittals.
+- Users can download any generated submittal, including submittals created by other users.
+- Users cannot edit/delete other users' submittals.
 
 ## Browser navigation
 
@@ -675,6 +741,23 @@ Ctrl + F5
 ```
 
 For Railway, make sure the frontend service redeployed after pushing changes.
+
+### Railway backend out of memory
+
+Large PDF packages can exceed Railway backend memory during preview/generation because PDFs are assembled in memory.
+
+The backend checks source PDF package size using:
+
+```env
+MAX_PACKAGE_SOURCE_MB=60
+```
+
+If the package is too large, reduce/compress PDFs or increase Railway backend memory/plan.
+
+Storage and memory are different:
+
+- storage controls how much data can be kept
+- memory/RAM controls how large a PDF package can be processed at one time
 
 ## Data storage
 

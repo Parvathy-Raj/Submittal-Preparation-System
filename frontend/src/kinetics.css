@@ -995,28 +995,48 @@ input:focus,select:focus,textarea:focus{
   padding:20px;
 }
 
+.form{
+  max-width:1180px;
+  margin:0 auto;
+  overflow:hidden;
+}
+
+.form .panel-title{
+  padding:22px 26px 18px;
+}
+
+.form .panel-title p{
+  max-width:720px;
+  margin-top:6px;
+  color:#58708f;
+  line-height:1.45;
+}
+
 .submittal-number-row{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:18px;
+  gap:16px;
+  padding:24px 26px 0;
 }
 
 .submittal-form-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:18px;
-  margin-top:18px;
+  gap:16px 18px;
+  padding:16px 26px 0;
+  margin-top:0;
 }
 
 .submittal-number-row label,
 .submittal-form-grid label{
   display:flex;
   flex-direction:column;
-  gap:8px;
-  font-size:13px;
+  gap:7px;
+  font-size:12px;
   font-weight:800;
-  color:#102a4c;
+  color:#24405f;
   text-transform:capitalize;
+  letter-spacing:.01em;
 }
 
 .submittal-number-row input,
@@ -1024,12 +1044,58 @@ input:focus,select:focus,textarea:focus{
 .submittal-form-grid input,
 .submittal-form-grid select{
   width:100%;
+  min-height:42px;
+  padding:10px 13px;
+  border-radius:10px;
+  background:#fff;
+  font-size:13px;
+  box-shadow:0 1px 0 rgba(15,23,42,.02);
+}
+
+.form h3,
+.form .product-dropdown,
+.form .attachment-builder,
+.form .package-order-preview,
+.form .error,
+.form .submittal-actions{
+  margin-left:26px;
+  margin-right:26px;
+}
+
+.form h3{
+  margin-top:24px;
+  margin-bottom:10px;
+  font-size:16px;
+  color:#102a4c;
+}
+
+.form .product-dropdown,
+.form .attachment-builder,
+.form .package-order-preview{
+  margin-top:12px;
 }
 
 @media (max-width:900px){
   .submittal-number-row,
   .submittal-form-grid{
     grid-template-columns:1fr;
+    padding-left:18px;
+    padding-right:18px;
+  }
+
+  .form .panel-title{
+    padding-left:18px;
+    padding-right:18px;
+  }
+
+  .form h3,
+  .form .product-dropdown,
+  .form .attachment-builder,
+  .form .package-order-preview,
+  .form .error,
+  .form .submittal-actions{
+    margin-left:18px;
+    margin-right:18px;
   }
 }
 

@@ -595,6 +595,20 @@ input:focus,select:focus,textarea:focus{
   border-color:#9fc3f5;
 }
 
+.draggable-row{
+  cursor:grab;
+}
+
+.draggable-row:active{
+  cursor:grabbing;
+}
+
+.order-section-header.draggable-row:hover,
+.order-row.draggable-row:hover{
+  border-color:#9fc3f5;
+  box-shadow:0 8px 18px rgba(37,99,235,.08);
+}
+
 .bar-chart,.line-chart{
   border-radius:16px;
   background:#fbfdff;

@@ -1,13 +1,13 @@
 ﻿import React, {useEffect, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
-import {Archive, ArrowDown, ArrowUp, Box, Download, Eye, FileStack, LayoutDashboard, LogOut, Plus, Settings, ShieldCheck, Trash2, Upload, Users} from "lucide-react";
+import {Archive, ArrowDown, ArrowUp, BarChart3, Box, Download, Eye, FileStack, LayoutDashboard, LogOut, Plus, Settings, ShieldCheck, Trash2, Upload, Users} from "lucide-react";
 import {api, Doc, Product, Submittal, Template, User} from "./api";
 import "./styles.css";
 import "./management.css";
 import "./kinetics.css";
 
-type View = "dashboard"|"new"|"products"|"documents"|"templates"|"users";
-const APP_VIEWS:View[]=["dashboard","new","products","documents","templates","users"];
+type View = "dashboard"|"new"|"products"|"reports"|"documents"|"templates"|"users";
+const APP_VIEWS:View[]=["dashboard","new","products","reports","documents","templates","users"];
 function viewFromHash():View{const hash=window.location.hash.replace("#","") as View;return APP_VIEWS.includes(hash)?hash:"dashboard"}
 function canAccessView(user:User, target:View){if(user.role==="system_admin")return true;if(user.role==="admin")return target!=="users";return !["documents","templates","users"].includes(target)}
 
@@ -32,8 +32,8 @@ function App(){
   useEffect(()=>{if(api.token)load()},[]);
   useEffect(()=>{const sync=()=>{const requested=viewFromHash();const next=user&&canAccessView(user,requested)?requested:"dashboard";if(next!==requested){window.history.replaceState(null,"",`#${next}`)}if(view==="new"&&next!=="new"&&dirtyDraftRef.current){window.history.replaceState(null,"","#new");setPendingNavigation(next);return}setView(next);if(next!=="new")setEditingSubmittal(null)};window.addEventListener("popstate",sync);window.addEventListener("hashchange",sync);return()=>{window.removeEventListener("popstate",sync);window.removeEventListener("hashchange",sync)}},[view,user?.role]);
   if(!user)return <Login onLogin={()=>load()}/>;
-  const nav:[View,string,React.ReactNode][]=[["dashboard","Overview",<LayoutDashboard/>],["new","New submittal",<Plus/>],["products","Product list",<Box/>],["documents","Documents",<Archive/>],["templates","Templates",<Settings/>],["users","Users",<Users/>]];
-  return <div className="app"><aside><div className="brand"><span><FileStack/></span><div>Submittal<b>Control</b></div></div><nav>{nav.filter(([id])=>canAccessView(user,id)).map(([id,label,icon])=><button key={id} className={view===id?"active":""} onClick={()=>navigate(id)}>{icon}{label}</button>)}</nav><div className="profile"><span>{user.full_name.split(" ").map(x=>x[0]).join("").slice(0,2)}</span><div><b>{user.full_name}</b><small>{user.role}</small></div><button onClick={logout}><LogOut/></button></div></aside><main className="content"><header><div><span className="eyebrow">SUBMITTAL WORKSPACE</span><h1>{nav.find(n=>n[0]===view)?.[1]}</h1></div>{view==="dashboard"&&<button className="primary compact" onClick={()=>{setEditingSubmittal(null);navigate("new")}}><Plus/> New submittal</button>}</header>{message&&<div className="notice" onClick={()=>setMessage("")}>{message}</div>}{view==="dashboard"&&<Dashboard user={user} subs={subs} products={products} docs={docs} onDownload={id=>api.download(id)} onEditDraft={submittal=>{setEditingSubmittal(submittal);navigate("new")}} onDelete={deleteSubmittal}/>} {view==="new"&&<NewSubmittal products={products} docs={docs} draft={editingSubmittal} registerDraftGuard={registerDraftGuard} done={async()=>{dirtyDraftRef.current=false;setEditingSubmittal(null);await load();navigateInternal("dashboard")}}/>}{view==="products"&&<Products products={products} docs={docs} refresh={load} canManage={user.role==="admin"||user.role==="system_admin"}/>} {view==="documents"&&canAccessView(user,"documents")&&<UploadManager type="documents" items={docs} refresh={load}/>} {view==="templates"&&canAccessView(user,"templates")&&<UploadManager type="templates" items={templates} refresh={load}/>} {view==="users"&&canAccessView(user,"users")&&<UsersPage/>}</main>{pendingNavigation&&<div className="modal-backdrop"><section className="leave-modal"><h2>Save this submittal as draft?</h2><p>You have started a submittal. Save it as draft so it appears as Draft/In progress and can be continued later.</p><div><button type="button" onClick={()=>setPendingNavigation(null)} disabled={savingDraft}>Stay here</button><button type="button" className="edit-product" onClick={leaveWithoutSaving} disabled={savingDraft}>Leave without saving</button><button type="button" className="primary compact" onClick={saveDraftAndLeave} disabled={savingDraft}>{savingDraft?"Saving...":"Save draft"}</button></div></section></div>}</div>
+  const nav:[View,string,React.ReactNode][]=[["dashboard","Overview",<LayoutDashboard/>],["new","New submittal",<Plus/>],["products","Product list",<Box/>],["reports","Reports",<BarChart3/>],["documents","Documents",<Archive/>],["templates","Templates",<Settings/>],["users","Users",<Users/>]];
+  return <div className="app"><aside><div className="brand"><span><FileStack/></span><div>Submittal<b>Control</b></div></div><nav>{nav.filter(([id])=>canAccessView(user,id)).map(([id,label,icon])=><button key={id} className={view===id?"active":""} onClick={()=>navigate(id)}>{icon}{label}</button>)}</nav><div className="profile"><span>{user.full_name.split(" ").map(x=>x[0]).join("").slice(0,2)}</span><div><b>{user.full_name}</b><small>{user.role}</small></div><button onClick={logout}><LogOut/></button></div></aside><main className="content"><header><div><span className="eyebrow">SUBMITTAL WORKSPACE</span><h1>{nav.find(n=>n[0]===view)?.[1]}</h1></div>{view==="dashboard"&&<button className="primary compact" onClick={()=>{setEditingSubmittal(null);navigate("new")}}><Plus/> New submittal</button>}</header>{message&&<div className="notice" onClick={()=>setMessage("")}>{message}</div>}{view==="dashboard"&&<Dashboard user={user} subs={subs} products={products} docs={docs} onDownload={id=>api.download(id)} onEditDraft={submittal=>{setEditingSubmittal(submittal);navigate("new")}} onDelete={deleteSubmittal}/>} {view==="new"&&<NewSubmittal products={products} docs={docs} draft={editingSubmittal} registerDraftGuard={registerDraftGuard} done={async()=>{dirtyDraftRef.current=false;setEditingSubmittal(null);await load();navigateInternal("dashboard")}}/>}{view==="products"&&<Products products={products} docs={docs} refresh={load} canManage={user.role==="admin"||user.role==="system_admin"}/>} {view==="reports"&&<ReportsPage user={user} subs={subs} onDownload={id=>api.download(id)} onEditDraft={submittal=>{setEditingSubmittal(submittal);navigate("new")}} onDelete={deleteSubmittal}/>} {view==="documents"&&canAccessView(user,"documents")&&<UploadManager type="documents" items={docs} refresh={load}/>} {view==="templates"&&canAccessView(user,"templates")&&<UploadManager type="templates" items={templates} refresh={load}/>} {view==="users"&&canAccessView(user,"users")&&<UsersPage/>}</main>{pendingNavigation&&<div className="modal-backdrop"><section className="leave-modal"><h2>Save this submittal as draft?</h2><p>You have started a submittal. Save it as draft so it appears as Draft/In progress and can be continued later.</p><div><button type="button" onClick={()=>setPendingNavigation(null)} disabled={savingDraft}>Stay here</button><button type="button" className="edit-product" onClick={leaveWithoutSaving} disabled={savingDraft}>Leave without saving</button><button type="button" className="primary compact" onClick={saveDraftAndLeave} disabled={savingDraft}>{savingDraft?"Saving...":"Save draft"}</button></div></section></div>}</div>
 }
 
 type ReportMode="all"|"month"|"year"|"range";
@@ -41,6 +41,13 @@ type ProfileReport={key:string;name:string;email:string;count:number;submittals:
 function formatRegisterDate(value:string){
   if(!value)return "-";
   return new Date(value).toLocaleDateString("en-GB").replace(/\//g,"-");
+}
+function reportDate(submittal:Submittal){
+  return submittal.submission_date||submittal.created_at.slice(0,10);
+}
+function csvCell(value:unknown){
+  const text=String(value??"").replace(/"/g,'""');
+  return `"${text}"`;
 }
 function SubmittalRegister({title,subtitle,submittals,user,onDownload,onEditDraft,onDelete,onClear}:{title:string;subtitle:string;submittals:Submittal[];user:User;onDownload:(id:string)=>void;onEditDraft:(submittal:Submittal)=>void;onDelete:(submittal:Submittal)=>void;onClear?:()=>void}){
   return <section className="panel submittal-register-panel"><div className="panel-title"><div><h2>{title}</h2><p>{subtitle}</p></div>{onClear&&<button className="edit-product" onClick={onClear}>Clear selection</button>}</div><div className="register-scroll"><div className="table submittal-register"><div className="tr th"><span>Date Submitted</span><span>QTN REF</span><span>Customer</span><span>Project Name</span><span>Category</span><span>Consultant</span><span>Main Contractor</span><span>Done By</span><span>Status</span><span></span></div>{submittals.map(s=>{const canEdit=user.role==="admin"||user.role==="system_admin"||s.created_by?.id===user.id;const canDelete=canEdit;return <div className="tr" key={s.id}><span>{formatRegisterDate(s.submission_date||s.created_at)}</span><span>{s.project_number||"-"}</span><span>{s.client||"-"}</span><span><b>{s.project_name}</b><small>{s.number} · Rev {s.revision}</small></span><span>{s.material_description||"-"}</span><span>{s.consultant||"-"}</span><span>{s.main_contractor||"-"}</span><span>{s.created_by?.full_name||"-"}</span><span><i className={`status ${s.status}`}>{s.status}</i></span><span className="submittal-row-actions">{s.status==="generated"&&<button className="icon" onClick={()=>onDownload(s.id)} title="Download"><Download/></button>}{canEdit&&<button className="edit-product" onClick={()=>onEditDraft(s)} title={s.status==="generated"?"Edit generated submittal":"Edit draft"}>Edit</button>}{canDelete&&<button className="icon danger" onClick={()=>onDelete(s)} title="Delete submittal"><Trash2/></button>}</span></div>})}{!submittals.length&&<div className="empty">No submittals found for this selection.</div>}</div></div></section>
@@ -80,6 +87,29 @@ function Dashboard({user,subs,products,docs,onDownload,onEditDraft,onDelete}:{us
   const generated=subs.filter(s=>s.status==="generated"),drafts=subs.filter(s=>s.status==="draft"),failed=subs.filter(s=>s.status==="failed");
   const latest=subs[0];
   return <div className="dashboard-page simple-overview"><section className="overview-cards"><article><small>Total submittals</small><strong>{subs.length}</strong><span>{latest?`Latest: ${latest.project_name}`:"No packages yet"}</span></article><article><small>Completed</small><strong>{generated.length}</strong><span>Generated PDF packages</span></article><article><small>Draft / failed</small><strong>{drafts.length + failed.length}</strong><span>{drafts.length} drafts, {failed.length} failed</span></article><article><small>Products</small><strong>{products.length}</strong><span>{docs.length} stored documents</span></article></section><AnalyticsPanel user={user} subs={subs} onDownload={onDownload} onEditDraft={onEditDraft} onDelete={onDelete}/></div>
+}
+
+function ReportsPage({user,subs,onDownload,onEditDraft,onDelete}:{user:User;subs:Submittal[];onDownload:(id:string)=>void;onEditDraft:(submittal:Submittal)=>void;onDelete:(submittal:Submittal)=>void}){
+  const today=new Date();
+  const [fromDate,setFromDate]=useState(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-01`);
+  const [toDate,setToDate]=useState(today.toISOString().slice(0,10));
+  const [status,setStatus]=useState("generated");
+  const filtered=subs.filter(submittal=>{const date=reportDate(submittal);const inDate=date>=fromDate&&date<=toDate;const inStatus=status==="all"||submittal.status===status;return inDate&&inStatus}).sort((a,b)=>reportDate(a).localeCompare(reportDate(b))||a.project_name.localeCompare(b.project_name));
+  function downloadSummary(){
+    const headers=["Date Submitted","QTN REF","Customer","Project Name","Category","Consultant","Main Contractor","Done By","Status"];
+    const rows=filtered.map(s=>[formatRegisterDate(reportDate(s)),s.project_number||"",s.client||"",s.project_name||"",s.material_description||"",s.consultant||"",s.main_contractor||"",s.created_by?.full_name||"",s.status||""]);
+    const csv=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
+    const blob=new Blob([`\uFEFF${csv}`],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const anchor=document.createElement("a");
+    anchor.href=url;
+    anchor.download=`submittal-summary-${fromDate}-to-${toDate}.csv`;
+    anchor.style.display="none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    setTimeout(()=>{anchor.remove();URL.revokeObjectURL(url)},30000);
+  }
+  return <div className="reports-page"><section className="panel report-generator"><div className="panel-title"><div><h2>Submittal summary report</h2><p>Select a period and download the matching submittal register.</p></div><button className="primary compact" onClick={downloadSummary} disabled={!filtered.length}><Download/> Download CSV</button></div><div className="report-generator-controls"><label>From<input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label><label>To<input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label><label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="generated">Generated only</option><option value="all">All statuses</option><option value="draft">Draft</option><option value="failed">Failed</option></select></label><article><small>Records</small><strong>{filtered.length}</strong><span>{fromDate} to {toDate}</span></article></div></section><SubmittalRegister title="Report preview" subtitle={`${filtered.length} submittal${filtered.length===1?"":"s"} ready for download`} submittals={filtered} user={user} onDownload={onDownload} onEditDraft={onEditDraft} onDelete={onDelete}/></div>
 }
 
 function NewSubmittal({products,docs,draft,registerDraftGuard,done}:{products:Product[];docs:Doc[];draft:Submittal|null;registerDraftGuard:(isDirty:boolean, saveDraft:(()=>Promise<void>)|null)=>void;done:()=>void}) {

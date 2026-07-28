@@ -45,9 +45,9 @@ function formatRegisterDate(value:string){
 function reportDate(submittal:Submittal){
   return submittal.submission_date||submittal.created_at.slice(0,10);
 }
-function csvCell(value:unknown){
-  const text=String(value??"").replace(/"/g,'""');
-  return `"${text}"`;
+function xmlCell(value:unknown,style="body"){
+  const text=String(value??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${text}</Data></Cell>`;
 }
 function SubmittalRegister({title,subtitle,submittals,user,onDownload,onEditDraft,onDelete,onClear}:{title:string;subtitle:string;submittals:Submittal[];user:User;onDownload:(id:string)=>void;onEditDraft:(submittal:Submittal)=>void;onDelete:(submittal:Submittal)=>void;onClear?:()=>void}){
   return <section className="panel submittal-register-panel"><div className="panel-title"><div><h2>{title}</h2><p>{subtitle}</p></div>{onClear&&<button className="edit-product" onClick={onClear}>Clear selection</button>}</div><div className="register-scroll"><div className="table submittal-register"><div className="tr th"><span>Date Submitted</span><span>QTN REF</span><span>Customer</span><span>Project Name</span><span>Category</span><span>Consultant</span><span>Main Contractor</span><span>Done By</span><span>Status</span><span></span></div>{submittals.map(s=>{const canEdit=user.role==="admin"||user.role==="system_admin"||s.created_by?.id===user.id;const canDelete=canEdit;return <div className="tr" key={s.id}><span>{formatRegisterDate(s.submission_date||s.created_at)}</span><span>{s.project_number||"-"}</span><span>{s.client||"-"}</span><span><b>{s.project_name}</b><small>{s.number} · Rev {s.revision}</small></span><span>{s.material_description||"-"}</span><span>{s.consultant||"-"}</span><span>{s.main_contractor||"-"}</span><span>{s.created_by?.full_name||"-"}</span><span><i className={`status ${s.status}`}>{s.status}</i></span><span className="submittal-row-actions">{s.status==="generated"&&<button className="icon" onClick={()=>onDownload(s.id)} title="Download"><Download/></button>}{canEdit&&<button className="edit-product" onClick={()=>onEditDraft(s)} title={s.status==="generated"?"Edit generated submittal":"Edit draft"}>Edit</button>}{canDelete&&<button className="icon danger" onClick={()=>onDelete(s)} title="Delete submittal"><Trash2/></button>}</span></div>})}{!submittals.length&&<div className="empty">No submittals found for this selection.</div>}</div></div></section>
@@ -98,18 +98,32 @@ function ReportsPage({user,subs,onDownload,onEditDraft,onDelete}:{user:User;subs
   function downloadSummary(){
     const headers=["Date Submitted","QTN REF","Customer","Project Name","Category","Consultant","Main Contractor","Done By","Status"];
     const rows=filtered.map(s=>[formatRegisterDate(reportDate(s)),s.project_number||"",s.client||"",s.project_name||"",s.material_description||"",s.consultant||"",s.main_contractor||"",s.created_by?.full_name||"",s.status||""]);
-    const csv=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
-    const blob=new Blob([`\uFEFF${csv}`],{type:"text/csv;charset=utf-8"});
+    const widths=[85,85,190,260,170,190,190,105,85];
+    const workbook=`<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+<Style ss:ID="title"><Font ss:Bold="1" ss:Size="13"/><Alignment ss:Horizontal="Center"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+<Style ss:ID="header"><Font ss:Bold="1" ss:Size="8"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+<Style ss:ID="body"><Font ss:Size="8"/><Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/></Borders></Style>
+</Styles>
+<Worksheet ss:Name="Submittal Summary"><Table>${widths.map(width=>`<Column ss:Width="${width}"/>`).join("")}
+<Row ss:Height="22"><Cell ss:MergeAcross="8" ss:StyleID="title"><Data ss:Type="String">SUBMITTAL SUMMARY REPORT (${formatRegisterDate(fromDate)} TO ${formatRegisterDate(toDate)})</Data></Cell></Row>
+<Row ss:Height="24">${headers.map(header=>xmlCell(header.toUpperCase(),"header")).join("")}</Row>
+${rows.map(row=>`<Row ss:AutoFitHeight="1">${row.map(value=>xmlCell(value)).join("")}</Row>`).join("")}
+</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>2</SplitHorizontal><TopRowBottomPane>2</TopRowBottomPane><ProtectObjects>False</ProtectObjects><ProtectScenarios>False</ProtectScenarios></WorksheetOptions></Worksheet>
+</Workbook>`;
+    const blob=new Blob([workbook],{type:"application/vnd.ms-excel;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const anchor=document.createElement("a");
     anchor.href=url;
-    anchor.download=`submittal-summary-${fromDate}-to-${toDate}.csv`;
+    anchor.download=`submittal-summary-${fromDate}-to-${toDate}.xls`;
     anchor.style.display="none";
     document.body.appendChild(anchor);
     anchor.click();
     setTimeout(()=>{anchor.remove();URL.revokeObjectURL(url)},30000);
   }
-  return <div className="reports-page"><section className="panel report-generator"><div className="panel-title"><div><h2>Submittal summary report</h2><p>Select a period and download the matching submittal register.</p></div><button className="primary compact" onClick={downloadSummary} disabled={!filtered.length}><Download/> Download CSV</button></div><div className="report-generator-controls"><label>From<input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label><label>To<input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label><label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="generated">Generated only</option><option value="all">All statuses</option><option value="draft">Draft</option><option value="failed">Failed</option></select></label><article><small>Records</small><strong>{filtered.length}</strong><span>{fromDate} to {toDate}</span></article></div></section><SubmittalRegister title="Report preview" subtitle={`${filtered.length} submittal${filtered.length===1?"":"s"} ready for download`} submittals={filtered} user={user} onDownload={onDownload} onEditDraft={onEditDraft} onDelete={onDelete}/></div>
+  return <div className="reports-page"><section className="panel report-generator"><div className="panel-title"><div><h2>Submittal summary report</h2><p>Select a period and download the matching submittal register as an Excel file.</p></div><button className="primary compact" onClick={downloadSummary} disabled={!filtered.length}><Download/> Download Excel</button></div><div className="report-generator-controls"><label>From<input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label><label>To<input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label><label>Status<select value={status} onChange={e=>setStatus(e.target.value)}><option value="generated">Generated only</option><option value="all">All statuses</option><option value="draft">Draft</option><option value="failed">Failed</option></select></label><article><small>Records</small><strong>{filtered.length}</strong><span>{fromDate} to {toDate}</span></article></div></section><SubmittalRegister title="Report preview" subtitle={`${filtered.length} submittal${filtered.length===1?"":"s"} ready for download`} submittals={filtered} user={user} onDownload={onDownload} onEditDraft={onEditDraft} onDelete={onDelete}/></div>
 }
 
 function NewSubmittal({products,docs,draft,registerDraftGuard,done}:{products:Product[];docs:Doc[];draft:Submittal|null;registerDraftGuard:(isDirty:boolean, saveDraft:(()=>Promise<void>)|null)=>void;done:()=>void}) {

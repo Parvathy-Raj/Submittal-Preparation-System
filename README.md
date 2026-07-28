@@ -345,7 +345,7 @@ Project information includes:
 - Revision
 - Project name
 - Material/submittal title selected from a dropdown or typed manually
-- Project number
+- QTN REF
 - Client
 - Client title
 - Consultant
